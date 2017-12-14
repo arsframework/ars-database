@@ -557,6 +557,7 @@ public interface Query<T> extends Iterable<T> {
 	 *            页码（从1开始）
 	 * @param size
 	 *            每页数据量
+	 * @return 数据集合
 	 */
 	public Query<T> paging(int page, int size);
 

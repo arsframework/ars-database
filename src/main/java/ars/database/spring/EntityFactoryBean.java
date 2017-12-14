@@ -16,8 +16,6 @@ import ars.database.repository.RepositoryFactory;
  * 
  * @author yongqiangwu
  * 
- * @param <T>
- *            对象类型
  */
 public class EntityFactoryBean implements FactoryBean<Object> {
 	private Object entity; // 模型实体（设置表示默认值）
@@ -63,8 +61,7 @@ public class EntityFactoryBean implements FactoryBean<Object> {
 				throw new RuntimeException("Attributes has not been initialize");
 			}
 			this.loaded = true;
-			Query<?> query = this.repositoryFactory.getRepository(this.model)
-					.query().custom(this.attributes);
+			Query<?> query = this.repositoryFactory.getRepository(this.model).query().custom(this.attributes);
 			if (this.multiple) {
 				List<?> objects = query.list();
 				if (Beans.isEmpty(this.entity) || !objects.isEmpty()) {

@@ -26,6 +26,8 @@ public final class EmptyQuery<T> implements Query<T> {
 	/**
 	 * 获取数据查询集合实例
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @return 数据查询集合实例
 	 */
 	@SuppressWarnings("unchecked")

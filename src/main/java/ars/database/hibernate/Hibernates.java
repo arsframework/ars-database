@@ -320,6 +320,8 @@ public final class Hibernates {
 	/**
 	 * 获取数据查询对象
 	 * 
+	 * @param <T>
+	 *            数据类型
 	 * @param sessionFactory
 	 *            会话工厂
 	 * @param model

@@ -21,6 +21,8 @@ public interface ServiceFactory {
 	/**
 	 * 根据数据模型获取业务操作对象
 	 * 
+	 * @param <T>
+	 *            数据类型
 	 * @param model
 	 *            数据模型
 	 * @return 业务操作对象

@@ -13,6 +13,7 @@ import ars.database.repository.Query;
  * @author yongqiangwu
  * 
  * @param <T>
+ *            数据类型
  */
 public class WrapQuery<T> implements Query<T> {
 	private Query<T> query; // 查询对象

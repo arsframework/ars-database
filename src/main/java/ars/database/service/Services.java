@@ -24,8 +24,7 @@ public final class Services {
 
 	public static ServiceFactory getServiceFactory() {
 		if (serviceFactory == null) {
-			throw new RuntimeException(
-					"Service factory has not been initialize");
+			throw new RuntimeException("Service factory has not been initialize");
 		}
 		return serviceFactory;
 	}
@@ -40,6 +39,8 @@ public final class Services {
 	/**
 	 * 获取业务操作对象
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param model
 	 *            数据模型
 	 * @return 业务操作对象
@@ -56,8 +57,7 @@ public final class Services {
 	 */
 	public static void createServiceResource(String... packages) {
 		for (String pack : packages) {
-			createServiceResource(Beans.getClasses(pack).toArray(
-					new Class<?>[0]));
+			createServiceResource(Beans.getClasses(pack).toArray(new Class<?>[0]));
 		}
 	}
 
@@ -69,32 +69,29 @@ public final class Services {
 	 */
 	public static void createServiceResource(Class<?>... models) {
 		for (Class<?> model : models) {
-			if (Beans.isMetaClass(model)
-					|| Modifier.isAbstract(model.getModifiers())) {
+			if (Beans.isMetaClass(model) || Modifier.isAbstract(model.getModifiers())) {
 				continue;
 			}
 			File resourcePath;
 			try {
-				resourcePath = new File(new File(URLDecoder.decode(
-						System.getProperty("user.dir"), "utf-8")), "src");
+				resourcePath = new File(new File(URLDecoder.decode(System.getProperty("user.dir"), "utf-8")), "src");
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 			String pack = model.getPackage().getName();
 			String basePack = pack.substring(0, pack.lastIndexOf("."));
-			File serviceInterfacePath = new File(new File(resourcePath,
-					Strings.replace(basePack, '.', '/')), "service");
+			File serviceInterfacePath = new File(new File(resourcePath, Strings.replace(basePack, '.', '/')),
+					"service");
 			if (!serviceInterfacePath.exists()) {
 				serviceInterfacePath.mkdirs();
 			}
 			String serviceInterfaceName = model.getSimpleName() + "Service";
-			File serviceInterface = new File(serviceInterfacePath,
-					serviceInterfaceName + ".java");
+			File serviceInterface = new File(serviceInterfacePath, serviceInterfaceName + ".java");
 			if (!serviceInterface.exists()) {
 				BufferedWriter writer = null;
 				try {
-					writer = new BufferedWriter(new OutputStreamWriter(
-							new FileOutputStream(serviceInterface), "utf-8"));
+					writer = new BufferedWriter(
+							new OutputStreamWriter(new FileOutputStream(serviceInterface), "utf-8"));
 					writer.write("package " + basePack + ".service;");
 					writer.newLine();
 					writer.newLine();
@@ -112,32 +109,24 @@ public final class Services {
 					writer.newLine();
 					writer.write("/**");
 					writer.newLine();
-					writer.write(" * " + model.getSimpleName()
-							+ " service interface");
+					writer.write(" * " + model.getSimpleName() + " service interface");
 					writer.newLine();
 					writer.write(" *");
 					writer.newLine();
-					writer.write(" * @author "
-							+ System.getenv().get("USERNAME"));
+					writer.write(" * @author " + System.getenv().get("USERNAME"));
 					writer.newLine();
 					writer.write(" *");
 					writer.newLine();
 					writer.write(" */");
 					writer.newLine();
-					writer.write("@Api(\""
-							+ (Strings.replace(
-									pack.substring(0, pack.lastIndexOf('.')),
-									'.', '/') + "/" + model.getSimpleName())
-									.toLowerCase() + "\")");
+					writer.write("@Api(\"" + (Strings.replace(pack.substring(0, pack.lastIndexOf('.')), '.', '/') + "/"
+							+ model.getSimpleName()).toLowerCase() + "\")");
 					writer.newLine();
 					if (TreeModel.class.isAssignableFrom(model)) {
-						writer.write("public interface " + serviceInterfaceName
-								+ " extends BasicService<"
-								+ model.getSimpleName() + ">, TreeService<"
-								+ model.getSimpleName() + "> {");
+						writer.write("public interface " + serviceInterfaceName + " extends BasicService<"
+								+ model.getSimpleName() + ">, TreeService<" + model.getSimpleName() + "> {");
 					} else {
-						writer.write("public interface " + serviceInterfaceName
-								+ " extends BasicService<"
+						writer.write("public interface " + serviceInterfaceName + " extends BasicService<"
 								+ model.getSimpleName() + "> {");
 					}
 					writer.newLine();
@@ -161,13 +150,12 @@ public final class Services {
 			if (!serviceImplementPath.exists()) {
 				serviceImplementPath.mkdirs();
 			}
-			File serviceImplement = new File(serviceImplementPath,
-					serviceInterfaceName + "Impl.java");
+			File serviceImplement = new File(serviceImplementPath, serviceInterfaceName + "Impl.java");
 			if (!serviceImplement.exists()) {
 				BufferedWriter writer = null;
 				try {
-					writer = new BufferedWriter(new OutputStreamWriter(
-							new FileOutputStream(serviceImplement), "utf-8"));
+					writer = new BufferedWriter(
+							new OutputStreamWriter(new FileOutputStream(serviceImplement), "utf-8"));
 					writer.write("package " + basePack + ".service.impl;");
 					writer.newLine();
 					writer.newLine();
@@ -179,16 +167,13 @@ public final class Services {
 					writer.newLine();
 					writer.write("import " + model.getName() + ";");
 					writer.newLine();
-					writer.write("import " + basePack + ".service."
-							+ serviceInterfaceName + ";");
+					writer.write("import " + basePack + ".service." + serviceInterfaceName + ";");
 					writer.newLine();
 					writer.newLine();
 					writer.write("@Service");
 					writer.newLine();
-					writer.write("public class " + serviceInterfaceName
-							+ "Impl extends StandardGeneralService<"
-							+ model.getSimpleName() + "> implements "
-							+ serviceInterfaceName + " {");
+					writer.write("public class " + serviceInterfaceName + "Impl extends StandardGeneralService<"
+							+ model.getSimpleName() + "> implements " + serviceInterfaceName + " {");
 					writer.newLine();
 					writer.newLine();
 					writer.write("}");

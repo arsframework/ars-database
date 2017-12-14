@@ -162,7 +162,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 * 
 	 * @param property
 	 *            属性名称，可使用“.”号隔开
-	 * @param 外键关联类型
+	 * @param joinType
+	 *            外键关联类型
 	 * @return 描述名称
 	 */
 	protected String getCriteriaAlias(String property, JoinType joinType) {

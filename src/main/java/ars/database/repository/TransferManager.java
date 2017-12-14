@@ -49,6 +49,8 @@ public interface TransferManager {
 	/**
 	 * 获取数据转换查询对象
 	 * 
+	 * @param <T>
+	 *            数据类型
 	 * @param requester
 	 *            请求对象
 	 * @param query

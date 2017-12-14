@@ -52,6 +52,8 @@ public final class Repositories {
 	/**
 	 * 获取数据持久化对象
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param model
 	 *            数据模型
 	 * @return 数据持久化对象
@@ -107,6 +109,8 @@ public final class Repositories {
 	/**
 	 * 构建树对象实体标识
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param tree
 	 *            树对象实体
 	 * @return 树标识
@@ -122,6 +126,8 @@ public final class Repositories {
 	/**
 	 * 构建树对象实体标识
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param tree
 	 *            树对象实体
 	 * @param sequence
@@ -144,6 +150,8 @@ public final class Repositories {
 	/**
 	 * 刷新树对象实体标识
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param tree
 	 *            树对象实体
 	 */
@@ -171,6 +179,8 @@ public final class Repositories {
 	/**
 	 * 合并树对象并返回根节点列表
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param trees
 	 *            树对象数组
 	 * @return 合并后的树对象根节点列表
@@ -186,6 +196,8 @@ public final class Repositories {
 	/**
 	 * 合并树对象并返回根节点副本（根据key值组装树结构）
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param trees
 	 *            树对象集合
 	 * @return 根节点列表
@@ -234,6 +246,8 @@ public final class Repositories {
 	/**
 	 * 级联保存树对象
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param repository
 	 *            持久化操作对象
 	 * @param object
@@ -264,6 +278,8 @@ public final class Repositories {
 	/**
 	 * 级联保存树对象
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param repository
 	 *            持久化操作对象
 	 * @param objects
@@ -316,6 +332,8 @@ public final class Repositories {
 	/**
 	 * 获取对象实体的树形对象
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @param objects
 	 *            对象实体集合
 	 * @param mappings
@@ -354,6 +372,8 @@ public final class Repositories {
 	/**
 	 * 获取数据空查询集合
 	 * 
+	 * @param <M>
+	 *            数据类型
 	 * @return 数据空查询集合
 	 */
 	public static <M> Query<M> emptyQuery() {
