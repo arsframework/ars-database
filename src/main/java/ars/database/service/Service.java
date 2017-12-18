@@ -32,6 +32,17 @@ public interface Service<T> {
 	public Repository<T> getRepository();
 
 	/**
+	 * 获取数据持久化操作对象
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param model
+	 *            数据模型
+	 * @return 数据持久化操作对象
+	 */
+	public <M> Repository<M> getRepository(Class<M> model);
+
+	/**
 	 * 设置对象实体业务操作监听器
 	 * 
 	 * @param listeners
@@ -58,8 +69,7 @@ public interface Service<T> {
 	 * @param parameters
 	 *            初始化参数
 	 */
-	public void initObject(Requester requester, T entity,
-			Map<String, Object> parameters);
+	public void initObject(Requester requester, T entity, Map<String, Object> parameters);
 
 	/**
 	 * 将对象持久化
