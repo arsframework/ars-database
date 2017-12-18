@@ -142,6 +142,19 @@ public class DatabaseConfiguration extends StandardTransferManager
 		}
 		Service<T> service = (Service<T>) this.services.get(model);
 		if (service == null) {
+			synchronized (model) {
+				service = (Service<T>) this.services.get(model);
+				if (service == null) {
+					for (Entry<Class<?>, Service<?>> entry : this.services.entrySet()) {
+						if (entry.getKey().isAssignableFrom(model)) {
+							service = (Service<T>) entry.getValue();
+							this.services.put(model, service);
+						}
+					}
+				}
+			}
+		}
+		if (service == null) {
 			throw new RuntimeException("Service not found:" + model);
 		}
 		return service;
@@ -159,6 +172,19 @@ public class DatabaseConfiguration extends StandardTransferManager
 			throw new IllegalArgumentException("Illegal model:" + model);
 		}
 		Repository<T> repository = (Repository<T>) this.repositories.get(model);
+		if (repository == null) {
+			synchronized (model) {
+				repository = (Repository<T>) this.repositories.get(model);
+				if (repository == null) {
+					for (Entry<Class<?>, Repository<?>> entry : this.repositories.entrySet()) {
+						if (entry.getKey().isAssignableFrom(model)) {
+							repository = (Repository<T>) entry.getValue();
+							this.repositories.put(model, repository);
+						}
+					}
+				}
+			}
+		}
 		if (repository == null) {
 			throw new RuntimeException("Repository not found:" + model);
 		}
