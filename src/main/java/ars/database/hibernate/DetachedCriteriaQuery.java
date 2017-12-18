@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
-import java.util.Collections;
 
 import org.hibernate.Session;
 import org.hibernate.Criteria;
@@ -50,16 +49,14 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	private int page; // 分页页码
 	private int size; // 分页数量
 	private T object; // 单个实例
+	private List<?> stats; // 统计数据列表
+	private List<T> objects; // 实例列表
 	private Integer count; // 实例数量
 	private Class<T> model; // 数据模型
 	private boolean loaded; // 数据是否已加载
-	private boolean distinct; // 数据是否去重
 	private boolean subquery; // 是否需要子查询
-	private boolean cacheable; // 是否使用缓存
 	private DetachedCriteria criteria; // 离线查询对象
 	private SessionFactory sessionFactory; // 会话工厂对象
-	private List<T> list = Collections.emptyList(); // 实例列表
-	private List<?> stats = Collections.emptyList(); // 统计数据列表
 	private List<String> orders = new LinkedList<String>();
 	private ProjectionList projections = Projections.projectionList();
 	private Map<String, String> aliases = new HashMap<String, String>();
@@ -107,9 +104,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 				this.criteria.addOrder(Order.desc(alias));
 			}
 		}
-		Criteria criteria = this.criteria.getExecutableCriteria(session).setCacheable(this.cacheable)
-				.setResultTransformer(
-						this.distinct ? DetachedCriteria.DISTINCT_ROOT_ENTITY : DetachedCriteria.ROOT_ENTITY);
+		Criteria criteria = this.criteria.getExecutableCriteria(session)
+				.setResultTransformer(DetachedCriteria.ROOT_ENTITY);
 		int index = (this.page - 1) * this.size;
 		if (index > 0) {
 			criteria.setFirstResult(index);
@@ -935,23 +931,6 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	}
 
 	@Override
-	public boolean isLoaded() {
-		return this.loaded;
-	}
-
-	@Override
-	public Query<T> setDistinct(boolean distinct) {
-		this.distinct = distinct;
-		return this;
-	}
-
-	@Override
-	public Query<T> setCacheable(boolean cacheable) {
-		this.cacheable = cacheable;
-		return this;
-	}
-
-	@Override
 	public Query<T> empty(String... properties) {
 		if (properties != null && properties.length > 0) {
 			if (properties.length == 1) {
@@ -1400,7 +1379,7 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public int count() {
 		if (this.count == null) {
 			if (this.loaded) {
-				this.count = this.list.size();
+				this.count = this.objects.size();
 			} else {
 				Session session = this.sessionFactory.openSession();
 				try {
@@ -1418,13 +1397,13 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public T single() {
 		if (!this.loaded) {
+			this.loaded = true;
 			Session session = this.sessionFactory.openSession();
 			try {
 				this.object = (T) this.getExecutableCriteria(session).uniqueResult();
 			} finally {
 				session.close();
 			}
-			this.loaded = true;
 		}
 		return this.object;
 	}
@@ -1433,22 +1412,23 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public List<T> list() {
 		if (!this.loaded) {
+			this.loaded = true;
 			Session session = this.sessionFactory.openSession();
 			try {
-				this.list = this.getExecutableCriteria(session).list();
+				this.objects = this.getExecutableCriteria(session).list();
 			} finally {
 				session.close();
 			}
-			this.loaded = true;
 		}
-		return this.list;
+		return this.objects;
 	}
 
 	@Override
 	public List<?> stats() {
 		if (!this.loaded) {
+			this.loaded = true;
 			if (this.projections.getLength() == 0) {
-				this.stats = Collections.emptyList();
+				this.stats = new ArrayList<Object>(0);
 			} else {
 				Session session = this.sessionFactory.openSession();
 				try {
@@ -1463,7 +1443,6 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 					session.close();
 				}
 			}
-			this.loaded = true;
 		}
 		return this.stats;
 	}
