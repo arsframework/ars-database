@@ -197,31 +197,6 @@ public interface Query<T> extends Iterable<T> {
 	public Class<T> getModel();
 
 	/**
-	 * 获取数据是否已加载
-	 * 
-	 * @return true/false
-	 */
-	public boolean isLoaded();
-
-	/**
-	 * 设置是否过滤重复数据
-	 * 
-	 * @param distinct
-	 *            true/false
-	 * @return 数据集合
-	 */
-	public Query<T> setDistinct(boolean distinct);
-
-	/**
-	 * 设置是否使用缓存
-	 * 
-	 * @param cacheable
-	 *            true/false
-	 * @return 数据集合
-	 */
-	public Query<T> setCacheable(boolean cacheable);
-
-	/**
 	 * 等于空
 	 * 
 	 * @param properties
