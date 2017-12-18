@@ -52,8 +52,7 @@ public abstract class AbstractService<T> implements Service<T> {
 	public AbstractService() {
 		this.model = (Class<T>) Beans.getClassGenericType(this.getClass());
 		if (this.model == null) {
-			throw new RuntimeException("Generic type not found:"
-					+ this.getClass().getName());
+			throw new RuntimeException("Generic type not found:" + this.getClass().getName());
 		}
 	}
 
@@ -157,9 +156,14 @@ public abstract class AbstractService<T> implements Service<T> {
 	@Override
 	public Repository<T> getRepository() {
 		if (this.repository == null) {
-			this.repository = Repositories.getRepository(this.getModel());
+			this.repository = this.getRepository(this.getModel());
 		}
 		return this.repository;
+	}
+
+	@Override
+	public <M> Repository<M> getRepository(Class<M> model) {
+		return Repositories.getRepository(model);
 	}
 
 	@Override
@@ -205,61 +209,47 @@ public abstract class AbstractService<T> implements Service<T> {
 	}
 
 	@Override
-	public void initObject(Requester requester, T entity,
-			Map<String, Object> parameters) {
+	public void initObject(Requester requester, T entity, Map<String, Object> parameters) {
 		Class<?> model = this.getRepository().getModel();
 		String primary = this.getRepository().getPrimary();
 		while (model != Object.class) {
 			for (Field field : model.getDeclaredFields()) {
 				String property = field.getName();
-				if (Modifier.isStatic(field.getModifiers())
-						|| property.equals(primary)) {
+				if (Modifier.isStatic(field.getModifiers()) || property.equals(primary)) {
 					continue;
 				}
-				if (!parameters.containsKey(property)
-						|| (TreeModel.class.isAssignableFrom(model) && (property
-								.equals("key") || property.equals("level") || property
-									.equals("leaf")))) {
+				if (!parameters.containsKey(property) || (TreeModel.class.isAssignableFrom(model)
+						&& (property.equals("key") || property.equals("level") || property.equals("leaf")))) {
 					continue;
 				}
 				Class<?> type = field.getType();
 				if (TreeModel.class.isAssignableFrom(type)
-						&& (property.equals("parent") || property
-								.equals("children"))) {
+						&& (property.equals("parent") || property.equals("children"))) {
 					type = this.getRepository().getModel();
 				}
 				try {
 					Object value = parameters.get(property);
-					if (Collection.class.isAssignableFrom(type)
-							|| !Beans.isMetaClass(type)) {
+					if (Collection.class.isAssignableFrom(type) || !Beans.isMetaClass(type)) {
 						Object current = Beans.getValue(entity, field);
 						if (Collection.class.isAssignableFrom(type)) {
-							Class<?> genericType = Beans
-									.getFieldGenericType(field);
-							Repository<?> repository = Repositories
-									.getRepository(genericType);
+							Class<?> genericType = Beans.getFieldGenericType(field);
+							Repository<?> repository = Repositories.getRepository(genericType);
 							String foreignKey = repository.getPrimary();
-							Class<?> foreignKeyType = Beans.getField(
-									genericType, foreignKey).getType();
-							Object[] values = Beans
-									.toArray(Object.class, value);
-							Collection<Object> objects = Set.class
-									.isAssignableFrom(type) ? new HashSet<Object>(
-									values.length) : new ArrayList<Object>(
-									values.length);
+							Class<?> foreignKeyType = Beans.getField(genericType, foreignKey).getType();
+							Object[] values = Beans.toArray(Object.class, value);
+							Collection<Object> objects = Set.class.isAssignableFrom(type)
+									? new HashSet<Object>(values.length)
+									: new ArrayList<Object>(values.length);
 							if (values.length > 0) {
 								outer: for (Object v : values) {
 									if (v == null) {
 										continue;
 									}
-									if (!genericType.isAssignableFrom(v
-											.getClass())) {
+									if (!genericType.isAssignableFrom(v.getClass())) {
 										v = Beans.toObject(foreignKeyType, v);
 									}
 									for (Object o : (Collection<?>) current) {
-										if (Beans.isEqual(
-												Beans.getValue(o, foreignKey),
-												v)) {
+										if (Beans.isEqual(Beans.getValue(o, foreignKey), v)) {
 											objects.add(o);
 											continue outer;
 										}
@@ -268,16 +258,12 @@ public abstract class AbstractService<T> implements Service<T> {
 								}
 							}
 							value = objects;
-						} else if (value != null
-								&& !type.isAssignableFrom(value.getClass())) {
-							Repository<?> repository = Repositories
-									.getRepository(type);
+						} else if (value != null && !type.isAssignableFrom(value.getClass())) {
+							Repository<?> repository = Repositories.getRepository(type);
 							String foreignKey = repository.getPrimary();
-							Class<?> foreignKeyType = Beans.getField(type,
-									foreignKey).getType();
+							Class<?> foreignKeyType = Beans.getField(type, foreignKey).getType();
 							value = Beans.toObject(foreignKeyType, value);
-							value = Beans.isEqual(
-									Beans.getValue(current, foreignKey), value) ? current
+							value = Beans.isEqual(Beans.getValue(current, foreignKey), value) ? current
 									: repository.get(value);
 						}
 						Method method = Beans.getSetMethod(model, field);
@@ -292,8 +278,7 @@ public abstract class AbstractService<T> implements Service<T> {
 					}
 					Beans.setValue(entity, field, value);
 				} catch (IllegalArgumentException e) {
-					throw new ParameterInvalidException(property,
-							e.getMessage());
+					throw new ParameterInvalidException(property, e.getMessage());
 				}
 			}
 			model = model.getSuperclass();
