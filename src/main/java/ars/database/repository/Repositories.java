@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.io.Serializable;
 
@@ -47,6 +49,24 @@ public final class Repositories {
 			throw new RuntimeException("Repository factory is already initialized");
 		}
 		Repositories.repositoryFactory = repositoryFactory;
+	}
+
+	/**
+	 * 获取系统数据模型列表
+	 * 
+	 * @return 数据模型列表
+	 */
+	public static List<Class<?>> getModels() {
+		List<Class<?>> models = new ArrayList<Class<?>>(getRepositoryFactory().getRepositories().keySet());
+		Collections.sort(models, new Comparator<Class<?>>() {
+
+			@Override
+			public int compare(Class<?> o1, Class<?> o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+
+		});
+		return models;
 	}
 
 	/**
