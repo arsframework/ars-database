@@ -48,23 +48,8 @@ public final class EmptyQuery<T> implements Query<T> {
 	}
 
 	@Override
-	public boolean isLoaded() {
-		return true;
-	}
-
-	@Override
 	public Iterator<T> iterator() {
 		return this.list().iterator();
-	}
-
-	@Override
-	public Query<T> setDistinct(boolean distinct) {
-		return this;
-	}
-
-	@Override
-	public Query<T> setCacheable(boolean cacheable) {
-		return this;
 	}
 
 	@Override
