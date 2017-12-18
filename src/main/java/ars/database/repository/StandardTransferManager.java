@@ -59,8 +59,7 @@ public class StandardTransferManager implements TransferManager {
 			this.mappings.put(model, transforms);
 		}
 		if (transforms.containsKey(property)) {
-			throw new RuntimeException("Transform is already registered:"
-					+ model.getName() + "." + property);
+			throw new RuntimeException("Transform is already registered:" + model.getName() + "." + property);
 		}
 		transforms.put(property, transform);
 	}
@@ -89,12 +88,10 @@ public class StandardTransferManager implements TransferManager {
 
 		public TransferExecutor(Transform transform, String property) {
 			if (transform == null) {
-				throw new IllegalArgumentException("Illegal transform:"
-						+ transform);
+				throw new IllegalArgumentException("Illegal transform:" + transform);
 			}
 			if (property == null) {
-				throw new IllegalArgumentException("Illegal property:"
-						+ property);
+				throw new IllegalArgumentException("Illegal property:" + property);
 			}
 			this.transform = transform;
 			this.property = property;
@@ -126,17 +123,14 @@ public class StandardTransferManager implements TransferManager {
 			}
 			Map<String, Object> parameters = new HashMap<String, Object>(1);
 			parameters.put(key.toString(), value);
-			Object object = requester.execute(this.transform.getResource(),
-					parameters);
+			Object object = requester.execute(this.transform.getResource(), parameters);
 			if (object instanceof RuntimeException) {
 				throw (RuntimeException) object;
 			} else if (object instanceof Exception) {
 				throw new RuntimeException((Exception) object);
 			}
-			List<?> targets = (List<?>) Beans.getAssemblePropertyValue(object,
-					this.transform.getKey());
-			return targets == null || targets.isEmpty() ? Beans.EMPTY_ARRAY
-					: targets.toArray();
+			List<?> targets = (List<?>) Beans.getAssemblePropertyValue(object, this.transform.getKey());
+			return targets == null || targets.isEmpty() ? Beans.EMPTY_ARRAY : targets.toArray();
 		}
 
 	}
@@ -150,15 +144,13 @@ public class StandardTransferManager implements TransferManager {
 	 *            查询属性名称
 	 * @return 数据查询转换对象
 	 */
-	protected TransferExecutor getTransferExecutor(Class<?> model,
-			String property) {
+	protected TransferExecutor getTransferExecutor(Class<?> model, String property) {
 		int split = property.indexOf('.');
 		String direct = split > 0 ? property.substring(0, split) : property;
 		Map<String, Transform> transforms = this.mappings.get(model);
-		Transform transform = transforms == null ? null : transforms
-				.get(direct);
-		return transform == null ? null : new TransferExecutor(transform,
-				split > 0 ? property.substring(split + 1) : transform.getKey());
+		Transform transform = transforms == null ? null : transforms.get(direct);
+		return transform == null ? null
+				: new TransferExecutor(transform, split > 0 ? property.substring(split + 1) : transform.getKey());
 	}
 
 	/**
@@ -170,6 +162,9 @@ public class StandardTransferManager implements TransferManager {
 	 *            数据模型
 	 */
 	class TransferQuery<T> implements Query<T> {
+		private T object; // 单个实例
+		private List<T> objects; // 实例列表
+		private boolean loaded; // 数据是否已加载
 		private Query<T> query; // 数据查询对象
 		private Requester requester; // 请求对象
 
@@ -178,8 +173,7 @@ public class StandardTransferManager implements TransferManager {
 				throw new IllegalArgumentException("Illegal query:" + query);
 			}
 			if (requester == null) {
-				throw new IllegalArgumentException("Illegal requester:"
-						+ requester);
+				throw new IllegalArgumentException("Illegal requester:" + requester);
 			}
 			this.query = query;
 			this.requester = requester;
@@ -196,8 +190,7 @@ public class StandardTransferManager implements TransferManager {
 		 */
 		@SuppressWarnings("unchecked")
 		protected T load(T entity, Map<String, Transform> transforms) {
-			final Map<String, Transform> lazies = new HashMap<String, Transform>(
-					transforms.size());
+			final Map<String, Transform> lazies = new HashMap<String, Transform>(transforms.size());
 			for (Entry<String, Transform> entry : transforms.entrySet()) {
 				String property = entry.getKey();
 				Transform transform = entry.getValue();
@@ -207,8 +200,7 @@ public class StandardTransferManager implements TransferManager {
 						lazies.put(property, transform);
 						continue;
 					}
-					Beans.setValue(entity, property,
-							this.transfer(property, value, transform));
+					Beans.setValue(entity, property, this.transfer(property, value, transform));
 				}
 			}
 			if (lazies.isEmpty()) {
@@ -219,8 +211,8 @@ public class StandardTransferManager implements TransferManager {
 			enhancer.setCallback(new MethodInterceptor() {
 
 				@Override
-				public Object intercept(Object target, Method method,
-						Object[] args, MethodProxy proxy) throws Throwable {
+				public Object intercept(Object target, Method method, Object[] args, MethodProxy proxy)
+						throws Throwable {
 					String name = method.getName();
 					Object value = proxy.invokeSuper(target, args);
 					if (value != null || !name.startsWith("get")) {
@@ -231,9 +223,7 @@ public class StandardTransferManager implements TransferManager {
 					if (transform == null) {
 						return value;
 					}
-					Object transfer = transfer(property,
-							Beans.getValue(target, transform.getTarget()),
-							transform);
+					Object transfer = transfer(property, Beans.getValue(target, transform.getTarget()), transform);
 					Beans.setValue(target, property, transfer);
 					return transfer;
 				}
@@ -280,18 +270,16 @@ public class StandardTransferManager implements TransferManager {
 					handle = property.substring(index + DELIMITER.length());
 					property = property.substring(0, index);
 				}
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor == null) {
 					return logic;
 				}
-				Object[] targets = executor.invoke(this.requester, handle,
-						value);
+				Object[] targets = executor.invoke(this.requester, handle, value);
 				if (targets == null || targets.length == 0) {
 					return null;
 				}
-				String key = new StringBuilder(executor.getTransform()
-						.getTarget()).append(DELIMITER).append(IN).toString();
+				String key = new StringBuilder(executor.getTransform().getTarget()).append(DELIMITER).append(IN)
+						.toString();
 				return new Condition(key, targets);
 			}
 			throw new RuntimeException("Not support query logic:" + logic);
@@ -308,14 +296,11 @@ public class StandardTransferManager implements TransferManager {
 		 *            数据转换对象
 		 * @return 转换后数据对象
 		 */
-		protected Object transfer(String property, Object value,
-				Transform transform) {
-			Class<?> targetClass = Beans.getField(this.getModel(), property)
-					.getType();
+		protected Object transfer(String property, Object value, Transform transform) {
+			Class<?> targetClass = Beans.getField(this.getModel(), property).getType();
 			Map<String, Object> parameters = new HashMap<String, Object>(1);
 			parameters.put(transform.getKey(), value);
-			Object result = this.requester.execute(transform.getResource(),
-					parameters);
+			Object result = this.requester.execute(transform.getResource(), parameters);
 			if (result instanceof RuntimeException) {
 				throw (RuntimeException) result;
 			} else if (result instanceof Exception) {
@@ -323,8 +308,7 @@ public class StandardTransferManager implements TransferManager {
 			}
 			List<?> targets = (List<?>) result;
 			if (targets == null || targets.isEmpty()) {
-				throw new DataConstraintException("Object does not exist:"
-						+ targetClass.getName() + parameters);
+				throw new DataConstraintException("Object does not exist:" + targetClass.getName() + parameters);
 			}
 			return Beans.initialize(targetClass, (Map<?, ?>) targets.get(0));
 		}
@@ -340,8 +324,7 @@ public class StandardTransferManager implements TransferManager {
 		 *            匹配值
 		 * @return 数据查询对象
 		 */
-		protected Query<T> execute(TransferExecutor executor, String handle,
-				Object value) {
+		protected Query<T> execute(TransferExecutor executor, String handle, Object value) {
 			Object[] targets = executor.invoke(this.requester, handle, value);
 			if (targets == null || targets.length == 0) {
 				return Repositories.emptyQuery();
@@ -361,33 +344,14 @@ public class StandardTransferManager implements TransferManager {
 		}
 
 		@Override
-		public boolean isLoaded() {
-			return this.query.isLoaded();
-		}
-
-		@Override
-		public Query<T> setDistinct(boolean distinct) {
-			this.query.setDistinct(distinct);
-			return this;
-		}
-
-		@Override
-		public Query<T> setCacheable(boolean cacheable) {
-			this.query.setCacheable(cacheable);
-			return this;
-		}
-
-		@Override
 		public Query<T> empty(String... properties) {
 			if (properties != null && properties.length > 0) {
 				for (String property : properties) {
-					TransferExecutor executor = getTransferExecutor(
-							this.getModel(), property);
+					TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 					if (executor == null) {
 						this.query.empty(property);
 						continue;
-					} else if (executor.getProperty().equals(
-							executor.getTransform().getTarget())) {
+					} else if (executor.getProperty().equals(executor.getTransform().getTarget())) {
 						this.query.empty(executor.getProperty());
 						continue;
 					}
@@ -401,13 +365,11 @@ public class StandardTransferManager implements TransferManager {
 		public Query<T> nonempty(String... properties) {
 			if (properties != null && properties.length > 0) {
 				for (String property : properties) {
-					TransferExecutor executor = getTransferExecutor(
-							this.getModel(), property);
+					TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 					if (executor == null) {
 						this.query.nonempty(property);
 						continue;
-					} else if (executor.getProperty().equals(
-							executor.getTransform().getTarget())) {
+					} else if (executor.getProperty().equals(executor.getTransform().getTarget())) {
 						this.query.nonempty(executor.getProperty());
 						continue;
 					}
@@ -420,8 +382,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> eq(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, EQ, value);
 				}
@@ -433,8 +394,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> ne(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, NE, value);
 				}
@@ -446,8 +406,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> gt(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, GT, value);
 				}
@@ -459,8 +418,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> ge(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, GE, value);
 				}
@@ -472,8 +430,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> lt(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, LT, value);
 				}
@@ -485,8 +442,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> le(String property, Object value) {
 			if (property != null && value != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, LE, value);
 				}
@@ -498,11 +454,9 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> between(String property, Object low, Object high) {
 			if (property != null && low != null && high != null) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
-					return this.execute(executor, IN,
-							new Object[] { low, high });
+					return this.execute(executor, IN, new Object[] { low, high });
 				}
 				this.query.between(property, low, high);
 			}
@@ -512,8 +466,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> start(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, START, values);
 				}
@@ -525,8 +478,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> nstart(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, NOT_START, values);
 				}
@@ -538,8 +490,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> end(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, END, values);
 				}
@@ -551,8 +502,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> nend(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, NOT_END, values);
 				}
@@ -564,8 +514,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> like(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, LIKE, values);
 				}
@@ -577,8 +526,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> nlike(String property, String... values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, NOT_LIKE, values);
 				}
@@ -590,8 +538,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> in(String property, Object[] values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, IN, values);
 				}
@@ -603,8 +550,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> or(String property, Object[] values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, OR, values);
 				}
@@ -616,8 +562,7 @@ public class StandardTransferManager implements TransferManager {
 		@Override
 		public Query<T> not(String property, Object[] values) {
 			if (property != null && values != null && values.length > 0) {
-				TransferExecutor executor = getTransferExecutor(
-						this.getModel(), property);
+				TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 				if (executor != null) {
 					return this.execute(executor, NOT, values);
 				}
@@ -628,14 +573,12 @@ public class StandardTransferManager implements TransferManager {
 
 		@Override
 		public Query<T> custom(String property, Object value) {
-			if (Strings.isEmpty(property) || property.equals(PAGE)
-					|| property.equals(SIZE) || property.equals(ORDER)) {
+			if (Strings.isEmpty(property) || property.equals(PAGE) || property.equals(SIZE) || property.equals(ORDER)) {
 				this.query.custom(property, value);
 				return this;
 			} else if (property.equals(CONDITION)) {
 				if (!Beans.isEmpty(value)) {
-					Logic logic = value instanceof Logic ? (Logic) value
-							: Conditions.parse(value.toString());
+					Logic logic = value instanceof Logic ? (Logic) value : Conditions.parse(value.toString());
 					return this.condition(logic);
 				}
 				return this;
@@ -647,8 +590,7 @@ public class StandardTransferManager implements TransferManager {
 		public Query<T> custom(Map<String, Object> parameters) {
 			if (parameters != null && !parameters.isEmpty()) {
 				for (Entry<String, Object> entry : parameters.entrySet()) {
-					Query<T> query = this.custom(entry.getKey(),
-							entry.getValue());
+					Query<T> query = this.custom(entry.getKey(), entry.getValue());
 					if (query instanceof EmptyQuery) {
 						return query;
 					}
@@ -677,8 +619,7 @@ public class StandardTransferManager implements TransferManager {
 				handle = property.substring(index + DELIMITER.length());
 				property = property.substring(0, index);
 			}
-			TransferExecutor executor = getTransferExecutor(this.getModel(),
-					property);
+			TransferExecutor executor = getTransferExecutor(this.getModel(), property);
 			if (executor != null) {
 				return this.execute(executor, handle, value);
 			}
@@ -690,8 +631,7 @@ public class StandardTransferManager implements TransferManager {
 		public Query<T> condition(Map<String, Object> parameters) {
 			if (parameters != null && !parameters.isEmpty()) {
 				for (Entry<String, Object> entry : parameters.entrySet()) {
-					Query<T> query = this.condition(entry.getKey(),
-							entry.getValue());
+					Query<T> query = this.condition(entry.getKey(), entry.getValue());
 					if (query instanceof EmptyQuery) {
 						return query;
 					}
@@ -803,31 +743,33 @@ public class StandardTransferManager implements TransferManager {
 
 		@Override
 		public T single() {
-			boolean loaded = this.query.isLoaded();
-			T entity = this.query.single();
-			if (loaded) {
-				return entity;
+			if (!this.loaded) {
+				this.loaded = true;
+				this.object = this.query.single();
+				Map<String, Transform> transforms = mappings.get(this.getModel());
+				if (transforms != null) {
+					this.object = this.load(this.object, transforms);
+				}
 			}
-			Map<String, Transform> transforms = mappings.get(this.getModel());
-			return transforms == null ? entity : this.load(entity, transforms);
+			return this.object;
 		}
 
 		@Override
 		public List<T> list() {
-			boolean loaded = this.query.isLoaded();
-			List<T> entities = this.query.list();
-			if (loaded) {
-				return entities;
+			if (!this.loaded) {
+				this.loaded = true;
+				this.objects = this.query.list();
+				Map<String, Transform> transforms = mappings.get(this.getModel());
+				if (transforms != null) {
+					List<T> loads = new ArrayList<T>(this.objects.size());
+					for (int i = 0; i < this.objects.size(); i++) {
+						loads.add(this.load(this.objects.get(i), transforms));
+					}
+					this.objects = loads;
+				}
+
 			}
-			Map<String, Transform> transforms = mappings.get(this.getModel());
-			if (transforms == null) {
-				return entities;
-			}
-			List<T> loads = new ArrayList<T>(entities.size());
-			for (int i = 0; i < entities.size(); i++) {
-				loads.add(this.load(entities.get(i), transforms));
-			}
-			return loads;
+			return this.objects;
 		}
 
 		@Override
