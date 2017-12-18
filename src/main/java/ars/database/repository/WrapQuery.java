@@ -40,21 +40,6 @@ public class WrapQuery<T> implements Query<T> {
 	}
 
 	@Override
-	public boolean isLoaded() {
-		return this.query.isLoaded();
-	}
-
-	@Override
-	public Query<T> setDistinct(boolean distinct) {
-		return this.query.setDistinct(distinct);
-	}
-
-	@Override
-	public Query<T> setCacheable(boolean cacheable) {
-		return this.query.setCacheable(cacheable);
-	}
-
-	@Override
 	public Query<T> empty(String... properties) {
 		return this.query.empty(properties);
 	}
