@@ -167,7 +167,7 @@ public abstract class AbstractService<T> implements Service<T> {
 	}
 
 	@Override
-	public void setListeners(ServiceListener<?>... listeners) {
+	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners) {
 		this.initListeners.clear();
 		this.saveListeners.clear();
 		this.queryListeners.clear();
