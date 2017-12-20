@@ -1,10 +1,14 @@
 package ars.database.spring;
 
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.LinkedList;
+import java.util.Collection;
 import java.util.Collections;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.annotation.Annotation;
 
 import org.activiti.engine.ProcessEngine;
@@ -19,6 +23,7 @@ import ars.database.service.Service;
 import ars.database.service.Services;
 import ars.database.service.ServiceFactory;
 import ars.database.service.WorkflowService;
+import ars.database.service.event.ServiceEvent;
 import ars.database.service.event.ServiceListener;
 import ars.database.repository.Transfer;
 import ars.database.repository.Transform;
@@ -61,31 +66,16 @@ public class DatabaseConfiguration extends StandardTransferManager
 		Repositories.setRepositoryFactory(this);
 
 		// 加载数据模型对应的持久化操作对象
-		Map<String, Repository> repositories = applicationContext.getBeansOfType(Repository.class);
+		Collection<Repository> repositories = applicationContext.getBeansOfType(Repository.class).values();
 		this.repositories = new HashMap<Class<?>, Repository<?>>(repositories.size());
-		for (Entry<String, Repository> entry : repositories.entrySet()) {
-			Repository repository = entry.getValue();
+		for (Repository repository : repositories) {
 			this.repositories.put(repository.getModel(), repository);
 		}
 
-		// 初始化业务操作对象
-		ServiceListener<?>[] listeners = applicationContext.getBeansOfType(ServiceListener.class).values()
-				.toArray(new ServiceListener[0]);
-		try {
-			for (int i = 0; i < listeners.length; i++) {
-				ServiceListener<?> listener = listeners[i];
-				if (AopUtils.isAopProxy(listener)) {
-					listeners[i] = (ServiceListener<?>) ((Advised) listener).getTargetSource().getTarget();
-				}
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		Map<String, Service> services = applicationContext.getBeansOfType(Service.class);
+		// 加载数据模型对应业务操作对象
+		Collection<Service> services = applicationContext.getBeansOfType(Service.class).values();
 		this.services = new HashMap<Class<?>, Service<?>>(services.size());
-		for (Entry<String, Service> entry : services.entrySet()) {
-			Service service = entry.getValue();
-			service.setListeners(listeners);
+		for (Service service : services) {
 			if (service instanceof WorkflowService) {
 				ProcessEngine processEngine = applicationContext.getBean(ProcessEngine.class);
 				((WorkflowService<?>) service).setProcessEngine(processEngine);
@@ -110,6 +100,38 @@ public class DatabaseConfiguration extends StandardTransferManager
 					}
 				}
 				model = model.getSuperclass();
+			}
+		}
+
+		// 初始化业务操作事件监听器
+		Collection<ServiceListener> listeners = applicationContext.getBeansOfType(ServiceListener.class).values();
+		Map<Class<?>, List<ServiceListener<?>>> listenerGroups = new HashMap<Class<?>, List<ServiceListener<?>>>();
+		try {
+			for (ServiceListener<?> listener : listeners) {
+				ServiceListener<?> target = null;
+				if (AopUtils.isAopProxy(listener)) {
+					target = (ServiceListener<?>) ((Advised) listener).getTargetSource().getTarget();
+				}
+				Class<?> etype = null;
+				for (Method method : (target == null ? listener : target).getClass().getMethods()) {
+					if (method.getName().equals("onServiceEvent") && (etype == null || etype == ServiceEvent.class)) {
+						etype = method.getParameterTypes()[0];
+					}
+				}
+				List<ServiceListener<?>> listenerGroup = listenerGroups.get(etype);
+				if (listenerGroup == null) {
+					listenerGroup = new LinkedList<ServiceListener<?>>();
+					listenerGroups.put(etype, listenerGroup);
+				}
+				listenerGroup.add(listener);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		for (Entry<Class<?>, List<ServiceListener<?>>> entry : listenerGroups.entrySet()) {
+			ServiceListener<?>[] listenerGroup = entry.getValue().toArray(new ServiceListener[0]);
+			for (Service service : services) {
+				service.addListeners(entry.getKey(), listenerGroup);
 			}
 		}
 	}
