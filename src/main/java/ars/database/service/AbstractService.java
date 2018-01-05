@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import java.util.Date;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -168,35 +169,58 @@ public abstract class AbstractService<T> implements Service<T> {
 
 	@Override
 	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners) {
-		this.initListeners.clear();
-		this.saveListeners.clear();
-		this.queryListeners.clear();
-		this.updateListeners.clear();
-		this.deleteListeners.clear();
-		for (ServiceListener<?> listener : listeners) {
-			Class<?> eventType = null;
-			for (Method method : listener.getClass().getMethods()) {
-				if (method.getName().equals("onServiceEvent")
-						&& (eventType == null || eventType == ServiceEvent.class)) {
-					eventType = method.getParameterTypes()[0];
-				}
-			}
-			if (eventType == InitEvent.class) {
-				this.initListeners.add(listener);
-			} else if (eventType == SaveEvent.class) {
-				this.saveListeners.add(listener);
-			} else if (eventType == QueryEvent.class) {
-				this.queryListeners.add(listener);
-			} else if (eventType == UpdateEvent.class) {
-				this.updateListeners.add(listener);
-			} else if (eventType == DeleteEvent.class) {
-				this.deleteListeners.add(listener);
+		if (listeners.length > 0) {
+			List<ServiceListener<E>> list = Arrays.asList(listeners);
+			if (type == InitEvent.class) {
+				this.initListeners.clear();
+				this.initListeners.addAll(list);
+			} else if (type == SaveEvent.class) {
+				this.saveListeners.clear();
+				this.saveListeners.addAll(list);
+			} else if (type == QueryEvent.class) {
+				this.queryListeners.clear();
+				this.queryListeners.addAll(list);
+			} else if (type == UpdateEvent.class) {
+				this.updateListeners.clear();
+				this.updateListeners.addAll(list);
+			} else if (type == DeleteEvent.class) {
+				this.deleteListeners.clear();
+				this.deleteListeners.addAll(list);
 			} else {
-				this.initListeners.add(listener);
-				this.saveListeners.add(listener);
-				this.queryListeners.add(listener);
-				this.updateListeners.add(listener);
-				this.deleteListeners.add(listener);
+				this.initListeners.clear();
+				this.saveListeners.clear();
+				this.queryListeners.clear();
+				this.updateListeners.clear();
+				this.deleteListeners.clear();
+				this.initListeners.addAll(list);
+				this.saveListeners.addAll(list);
+				this.queryListeners.addAll(list);
+				this.updateListeners.addAll(list);
+				this.deleteListeners.addAll(list);
+			}
+		}
+	}
+
+	@Override
+	public <E extends ServiceEvent> void addListeners(Class<E> type, ServiceListener<E>... listeners) {
+		if (listeners.length > 0) {
+			List<ServiceListener<E>> list = Arrays.asList(listeners);
+			if (type == InitEvent.class) {
+				this.initListeners.addAll(list);
+			} else if (type == SaveEvent.class) {
+				this.saveListeners.addAll(list);
+			} else if (type == QueryEvent.class) {
+				this.queryListeners.addAll(list);
+			} else if (type == UpdateEvent.class) {
+				this.updateListeners.addAll(list);
+			} else if (type == DeleteEvent.class) {
+				this.deleteListeners.addAll(list);
+			} else {
+				this.initListeners.addAll(list);
+				this.saveListeners.addAll(list);
+				this.queryListeners.addAll(list);
+				this.updateListeners.addAll(list);
+				this.deleteListeners.addAll(list);
 			}
 		}
 	}
