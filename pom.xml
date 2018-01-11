@@ -4,7 +4,7 @@
 
 	<groupId>com.arsframework</groupId>
 	<artifactId>ars-database</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<packaging>jar</packaging>
 
 	<name>ars-database</name>
@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>com.arsframework</groupId>
 			<artifactId>ars-core</artifactId>
-			<version>1.0.0</version>
+			<version>1.3.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/cglib/cglib-full -->
