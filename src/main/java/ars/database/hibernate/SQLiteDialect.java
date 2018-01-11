@@ -41,124 +41,126 @@ public class SQLiteDialect extends Dialect {
 		registerColumnType(Types.CLOB, "clob");
 		registerColumnType(Types.BOOLEAN, "integer");
 
-		registerFunction("concat", new VarArgsSQLFunction(
-				StandardBasicTypes.STRING, "", "||", ""));
-		registerFunction("mod", new SQLFunctionTemplate(
-				StandardBasicTypes.INTEGER, "?1 % ?2"));
-		registerFunction("substr", new StandardSQLFunction("substr",
-				StandardBasicTypes.STRING));
-		registerFunction("substring", new StandardSQLFunction("substr",
-				StandardBasicTypes.STRING));
+		registerFunction("concat", new VarArgsSQLFunction(StandardBasicTypes.STRING, "", "||", ""));
+		registerFunction("mod", new SQLFunctionTemplate(StandardBasicTypes.INTEGER, "?1 % ?2"));
+		registerFunction("substr", new StandardSQLFunction("substr", StandardBasicTypes.STRING));
+		registerFunction("substring", new StandardSQLFunction("substr", StandardBasicTypes.STRING));
 	}
 
+	@Override
 	public boolean supportsIdentityColumns() {
 		return true;
 	}
 
-	/*
-	 * public boolean supportsInsertSelectIdentity() { return true; // As
-	 * specify in NHibernate dialect }
-	 */
-
+	@Override
 	public boolean hasDataTypeInIdentityColumn() {
 		return false;
 	}
 
-	/*
-	 * public String appendIdentitySelectToInsert(String insertString) { return
-	 * new StringBuffer(insertString.length()+30). // As specify in NHibernate
-	 * dialect append(insertString).
-	 * append("; ").append(getIdentitySelectString()). toString(); }
-	 */
-
+	@Override
 	public String getIdentityColumnString() {
 		return "integer";
 	}
 
+	@Override
 	public String getIdentitySelectString() {
 		return "select last_insert_rowid()";
 	}
 
+	@Override
 	public boolean supportsLimit() {
 		return true;
 	}
 
+	@Override
 	public String getLimitString(String query, boolean hasOffset) {
-		return new StringBuffer(query.length() + 20).append(query)
-				.append(hasOffset ? " limit ? offset ?" : " limit ?")
+		return new StringBuffer(query.length() + 20).append(query).append(hasOffset ? " limit ? offset ?" : " limit ?")
 				.toString();
 	}
 
+	@Override
 	public boolean supportsTemporaryTables() {
 		return true;
 	}
 
+	@Override
 	public String getCreateTemporaryTableString() {
 		return "create temporary table if not exists";
 	}
 
+	@Override
 	public boolean dropTemporaryTableAfterUse() {
 		return false;
 	}
 
+	@Override
 	public boolean supportsCurrentTimestampSelection() {
 		return true;
 	}
 
+	@Override
 	public boolean isCurrentTimestampSelectStringCallable() {
 		return false;
 	}
 
+	@Override
 	public String getCurrentTimestampSelectString() {
 		return "select current_timestamp";
 	}
 
+	@Override
 	public boolean supportsUnionAll() {
 		return true;
 	}
 
+	@Override
 	public boolean hasAlterTable() {
 		return false;
 	}
 
+	@Override
 	public boolean dropConstraints() {
 		return false;
 	}
 
+	@Override
 	public String getAddColumnString() {
 		return "add column";
 	}
 
+	@Override
 	public String getForUpdateString() {
 		return "";
 	}
 
+	@Override
 	public boolean supportsOuterJoinForUpdate() {
 		return false;
 	}
 
+	@Override
 	public String getDropForeignKeyString() {
-		throw new UnsupportedOperationException(
-				"No drop foreign key syntax supported by SQLiteDialect");
+		throw new UnsupportedOperationException("No drop foreign key syntax supported by SQLiteDialect");
 	}
 
-	public String getAddForeignKeyConstraintString(String constraintName,
-			String[] foreignKey, String referencedTable, String[] primaryKey,
-			boolean referencesPrimaryKey) {
-		throw new UnsupportedOperationException(
-				"No add foreign key syntax supported by SQLiteDialect");
+	@Override
+	public String getAddForeignKeyConstraintString(String constraintName, String[] foreignKey, String referencedTable,
+			String[] primaryKey, boolean referencesPrimaryKey) {
+		throw new UnsupportedOperationException("No add foreign key syntax supported by SQLiteDialect");
 	}
 
+	@Override
 	public String getAddPrimaryKeyConstraintString(String constraintName) {
-		throw new UnsupportedOperationException(
-				"No add primary key syntax supported by SQLiteDialect");
+		throw new UnsupportedOperationException("No add primary key syntax supported by SQLiteDialect");
 	}
 
+	@Override
 	public boolean supportsIfExistsBeforeTableName() {
 		return true;
 
 	}
 
+	@Override
 	public boolean supportsCascadeDelete() {
 		return false;
 	}
