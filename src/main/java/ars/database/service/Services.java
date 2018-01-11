@@ -22,6 +22,10 @@ import ars.database.service.ServiceFactory;
 public final class Services {
 	private static ServiceFactory serviceFactory;
 
+	private Services() {
+
+	}
+
 	public static ServiceFactory getServiceFactory() {
 		if (serviceFactory == null) {
 			throw new RuntimeException("Service factory has not been initialize");

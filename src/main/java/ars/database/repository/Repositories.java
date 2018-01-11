@@ -37,6 +37,10 @@ public final class Repositories {
 
 	private static RepositoryFactory repositoryFactory;
 
+	private Repositories() {
+
+	}
+
 	public static RepositoryFactory getRepositoryFactory() {
 		if (repositoryFactory == null) {
 			throw new RuntimeException("Repository factory has not been initialize");

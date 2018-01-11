@@ -41,6 +41,10 @@ import ars.database.hibernate.DetachedCriteriaQuery;
  * 
  */
 public final class Hibernates {
+	private Hibernates() {
+
+	}
+
 	/**
 	 * 获取数据模型元对象
 	 * 
