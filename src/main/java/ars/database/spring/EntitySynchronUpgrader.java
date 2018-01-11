@@ -97,7 +97,7 @@ public class EntitySynchronUpgrader<T> extends ApplicationInitializer {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public void execute(ContextRefreshedEvent event) {
+	protected void execute(ContextRefreshedEvent event) {
 		if (this.entities.isEmpty()) {
 			throw new RuntimeException("Target entities has not been initialize");
 		}
