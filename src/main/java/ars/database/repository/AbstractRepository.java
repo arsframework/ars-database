@@ -24,10 +24,11 @@ public abstract class AbstractRepository<T> implements Repository<T> {
 
 	@SuppressWarnings("unchecked")
 	public AbstractRepository() {
-		this.model = (Class<T>) Beans.getClassGenericType(this.getClass());
-		if (this.model == null) {
+		Class<?>[] genericTypes = Beans.getGenericTypes(this.getClass());
+		if (genericTypes.length == 0) {
 			throw new RuntimeException("Generic type not found:" + this.getClass().getName());
 		}
+		this.model = (Class<T>) genericTypes[0];
 	}
 
 	/**

@@ -619,8 +619,9 @@ public final class Hibernates {
 									writer.newLine();
 									writer.write("\t\t</property>");
 								} else if (Collection.class.isAssignableFrom(type)) {
-									Class<?> foreign = Beans.getFieldGenericType(field);
-									if (foreign == null || foreign == Object.class
+									Class<?> foreign = null;
+									Class<?>[] genericTypes = Beans.getGenericTypes(field);
+									if (genericTypes.length == 0 || (foreign = genericTypes[0]) == Object.class
 											|| Modifier.isAbstract(foreign.getModifiers())) {
 										continue;
 									}

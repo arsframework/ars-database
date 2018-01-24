@@ -51,10 +51,11 @@ public abstract class AbstractService<T> implements Service<T> {
 
 	@SuppressWarnings("unchecked")
 	public AbstractService() {
-		this.model = (Class<T>) Beans.getClassGenericType(this.getClass());
-		if (this.model == null) {
+		Class<?>[] genericTypes = Beans.getGenericTypes(this.getClass());
+		if (genericTypes.length == 0) {
 			throw new RuntimeException("Generic type not found:" + this.getClass().getName());
 		}
+		this.model = (Class<T>) genericTypes[0];
 	}
 
 	/**
@@ -256,29 +257,32 @@ public abstract class AbstractService<T> implements Service<T> {
 					if (Collection.class.isAssignableFrom(type) || !Beans.isMetaClass(type)) {
 						Object current = Beans.getValue(entity, field);
 						if (Collection.class.isAssignableFrom(type)) {
-							Class<?> genericType = Beans.getFieldGenericType(field);
-							Repository<?> repository = Repositories.getRepository(genericType);
-							String foreignKey = repository.getPrimary();
-							Class<?> foreignKeyType = Beans.getField(genericType, foreignKey).getType();
 							Object[] values = Beans.toArray(Object.class, value);
 							Collection<Object> objects = Set.class.isAssignableFrom(type)
 									? new HashSet<Object>(values.length)
 									: new ArrayList<Object>(values.length);
-							if (values.length > 0) {
-								outer: for (Object v : values) {
-									if (v == null) {
-										continue;
-									}
-									if (!genericType.isAssignableFrom(v.getClass())) {
-										v = Beans.toObject(foreignKeyType, v);
-									}
-									for (Object o : (Collection<?>) current) {
-										if (Beans.isEqual(Beans.getValue(o, foreignKey), v)) {
-											objects.add(o);
-											continue outer;
+							Class<?>[] genericTypes = Beans.getGenericTypes(field);
+							if (genericTypes.length > 0) {
+								Class<?> genericType = genericTypes[0];
+								Repository<?> repository = Repositories.getRepository(genericType);
+								String foreignKey = repository.getPrimary();
+								Class<?> foreignKeyType = Beans.getField(genericType, foreignKey).getType();
+								if (values.length > 0) {
+									outer: for (Object v : values) {
+										if (v == null) {
+											continue;
 										}
+										if (!genericType.isAssignableFrom(v.getClass())) {
+											v = Beans.toObject(foreignKeyType, v);
+										}
+										for (Object o : (Collection<?>) current) {
+											if (Beans.isEqual(Beans.getValue(o, foreignKey), v)) {
+												objects.add(o);
+												continue outer;
+											}
+										}
+										objects.add(repository.get(v));
 									}
-									objects.add(repository.get(v));
 								}
 							}
 							value = objects;
