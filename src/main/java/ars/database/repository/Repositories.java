@@ -1,20 +1,24 @@
 package ars.database.repository;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Comparator;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.io.Serializable;
 
 import ars.util.Beans;
 import ars.util.Strings;
+import ars.util.Randoms;
 import ars.util.Formable;
 import ars.util.SimpleTree;
 import ars.database.model.TreeModel;
@@ -34,6 +38,11 @@ public final class Repositories {
 	 * 树对象唯一标识字符串分隔符
 	 */
 	public static final char TREE_KEY_SEPARATOR = 'x';
+
+	/**
+	 * 默认数据模型主键名称
+	 */
+	public static final String DEFAULT_PRIMARY_NAME = "id";
 
 	private static RepositoryFactory repositoryFactory;
 
@@ -140,11 +149,11 @@ public final class Repositories {
 	 * @return 树标识
 	 */
 	@SuppressWarnings("rawtypes")
-	public static <M extends TreeModel> String buildKey(M tree) {
+	public static <M extends TreeModel> String buildTreeKey(M tree) {
 		if (tree == null) {
 			throw new IllegalArgumentException("Illegal tree:" + tree);
 		}
-		return buildKey(tree, tree.getId());
+		return buildTreeKey(tree, tree.getId());
 	}
 
 	/**
@@ -159,7 +168,7 @@ public final class Repositories {
 	 * @return 树标识
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <M extends TreeModel> String buildKey(M tree, int sequence) {
+	public static <M extends TreeModel> String buildTreeKey(M tree, int sequence) {
 		if (tree == null) {
 			throw new IllegalArgumentException("Illegal tree:" + tree);
 		}
@@ -180,13 +189,13 @@ public final class Repositories {
 	 *            树对象实体
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <M extends TreeModel> void refreshKey(M tree) {
+	public static <M extends TreeModel> void refreshTreeKey(M tree) {
 		if (tree == null) {
 			throw new IllegalArgumentException("Illegal tree:" + tree);
 		}
 		String key = tree.getKey();
 		if (key == null) {
-			tree.setKey(buildKey(tree));
+			tree.setKey(buildTreeKey(tree));
 		} else {
 			M parent = (M) tree.getParent();
 			String pkey = getParentKey(key);
@@ -268,6 +277,97 @@ public final class Repositories {
 	}
 
 	/**
+	 * 获取主键名称
+	 * 
+	 * @param model
+	 *            数据模型
+	 * @return 主键名称
+	 */
+	public static String getPrimary(Class<?> model) {
+		if (model == null) {
+			throw new IllegalArgumentException("Illegal model:" + model);
+		}
+		return getRepository(model).getPrimary();
+	}
+
+	/**
+	 * 根据主键获取对象实例
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param model
+	 *            数据模型
+	 * @param id
+	 *            主键
+	 * @return 对象实例
+	 */
+	public static <M> M get(Class<M> model, Object id) {
+		if (model == null) {
+			throw new IllegalArgumentException("Illegal model:" + model);
+		}
+		return id == null ? null : getRepository(model).get(id);
+	}
+
+	/**
+	 * 保存对象
+	 * 
+	 * @param object
+	 *            对象实例
+	 * @return 数据主键
+	 */
+	@SuppressWarnings("unchecked")
+	public static Serializable save(Object object) {
+		if (object == null) {
+			throw new IllegalArgumentException("Illegal object:" + object);
+		}
+		return getRepository((Class<Object>) object.getClass()).save(object);
+	}
+
+	/**
+	 * 修改对象
+	 * 
+	 * @param object
+	 *            对象实例
+	 */
+	@SuppressWarnings("unchecked")
+	public static void update(Object object) {
+		if (object == null) {
+			throw new IllegalArgumentException("Illegal object:" + object);
+		}
+		getRepository((Class<Object>) object.getClass()).update(object);
+	}
+
+	/**
+	 * 删除对象
+	 * 
+	 * @param object
+	 *            对象实例
+	 */
+	@SuppressWarnings("unchecked")
+	public static void delete(Object object) {
+		if (object == null) {
+			throw new IllegalArgumentException("Illegal object:" + object);
+		}
+		getRepository((Class<Object>) object.getClass()).delete(object);
+	}
+
+	/**
+	 * 级联保存树对象
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param object
+	 *            树对象
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <M extends TreeModel> void saveTree(M object) {
+		if (object == null) {
+			throw new IllegalArgumentException("Illegal object:" + object);
+		}
+		saveTree(getRepository((Class<M>) object.getClass()), object);
+	}
+
+	/**
 	 * 级联保存树对象
 	 * 
 	 * @param <M>
@@ -276,10 +376,9 @@ public final class Repositories {
 	 *            持久化操作对象
 	 * @param object
 	 *            树对象
-	 * @return 保存后的树对象
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <M> M saveTree(Repository<M> repository, M object) {
+	public static <M extends TreeModel> void saveTree(Repository<M> repository, M object) {
 		if (repository == null) {
 			throw new IllegalArgumentException("Illegal repository:" + repository);
 		}
@@ -296,32 +395,6 @@ public final class Repositories {
 			child.setParent(tree);
 			saveTree(repository, (M) child);
 		}
-		return object;
-	}
-
-	/**
-	 * 级联保存树对象
-	 * 
-	 * @param <M>
-	 *            数据类型
-	 * @param repository
-	 *            持久化操作对象
-	 * @param objects
-	 *            树对象集合
-	 * @return 保存后的树对象列表
-	 */
-	public static <M> List<M> saveTrees(Repository<M> repository, Collection<M> objects) {
-		if (repository == null) {
-			throw new IllegalArgumentException("Illegal repository:" + repository);
-		}
-		if (objects.isEmpty()) {
-			return new ArrayList<M>(0);
-		}
-		List<M> saved = new ArrayList<M>(objects.size());
-		for (M tree : objects) {
-			saved.add(saveTree(repository, tree));
-		}
-		return saved;
 	}
 
 	/**
@@ -394,6 +467,22 @@ public final class Repositories {
 	}
 
 	/**
+	 * 获取数据查询集合
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param model
+	 *            数据模型
+	 * @return 数据查询集合
+	 */
+	public static <M> Query<M> query(Class<M> model) {
+		if (model == null) {
+			throw new IllegalArgumentException("Illegal model:" + model);
+		}
+		return getRepository(model).query();
+	}
+
+	/**
 	 * 获取数据空查询集合
 	 * 
 	 * @param <M>
@@ -402,6 +491,58 @@ public final class Repositories {
 	 */
 	public static <M> Query<M> emptyQuery() {
 		return EmptyQuery.instance();
+	}
+
+	/**
+	 * 随机生成对象实例
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param model
+	 *            数据模型
+	 * @return 对象实例
+	 */
+	public static <M> M random(final Class<M> model) {
+		if (model == null) {
+			throw new IllegalArgumentException("Illegal model:" + model);
+		}
+		final Set<Class<?>> models = getRepositoryFactory().getRepositories().keySet();
+		return Randoms.random(model).register(new Randoms.ExcludeStrategy() {
+
+			@Override
+			public boolean exclude(Class<?> type, Field field) {
+				return Modifier.isAbstract(type.getModifiers()) || (field != null && models.contains(type)
+						&& (field.getName().equals(getPrimary(type)) || (TreeModel.class.isAssignableFrom(type)
+								&& (field.getName().equals("key") || field.getName().equals("level")
+										|| field.getName().equals("leaf") || field.getName().equals("parent")))));
+			}
+
+		}).register(new Randoms.RandomGeneratorFactory() {
+
+			@Override
+			public <T> Randoms.RandomGenerator<T> getRandomGenerator(final Class<T> type, Field field) {
+				if (type == model || !models.contains(type)) {
+					return null;
+				}
+				return new Randoms.RandomGenerator<T>() {
+
+					@Override
+					public T generate() {
+						Repository<T> repository = getRepository(type);
+						int count = repository.query().count();
+						if (count == 0) {
+							return null;
+						}
+						int size = 100;
+						int page = Randoms.randomInteger(1, (int) Math.ceil((double) count / size) + 1);
+						List<T> objects = repository.query().paging(page, size).list();
+						return objects.get(Randoms.randomInteger(0, objects.size()));
+					}
+
+				};
+			}
+
+		}).build();
 	}
 
 }

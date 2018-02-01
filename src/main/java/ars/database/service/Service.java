@@ -33,17 +33,6 @@ public interface Service<T> {
 	public Repository<T> getRepository();
 
 	/**
-	 * 获取数据持久化操作对象
-	 * 
-	 * @param <M>
-	 *            数据类型
-	 * @param model
-	 *            数据模型
-	 * @return 数据持久化操作对象
-	 */
-	public <M> Repository<M> getRepository(Class<M> model);
-
-	/**
 	 * 设置对象实体业务操作监听器
 	 * 
 	 * @param <E>

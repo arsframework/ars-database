@@ -90,7 +90,7 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criteria getExecutableCriteria(Session session) {
 		if (this.subquery) {
-			String primary = Repositories.getRepository(this.getModel()).getPrimary();
+			String primary = Repositories.getPrimary(this.getModel());
 			this.criteria = DetachedCriteria.forClass(this.getModel())
 					.add(Subqueries.propertyIn(primary, this.criteria.setProjection(Property.forName(primary))));
 			this.aliases.clear();

@@ -158,14 +158,9 @@ public abstract class AbstractService<T> implements Service<T> {
 	@Override
 	public Repository<T> getRepository() {
 		if (this.repository == null) {
-			this.repository = this.getRepository(this.getModel());
+			this.repository = Repositories.getRepository(this.getModel());
 		}
 		return this.repository;
-	}
-
-	@Override
-	public <M> Repository<M> getRepository(Class<M> model) {
-		return Repositories.getRepository(model);
 	}
 
 	@Override

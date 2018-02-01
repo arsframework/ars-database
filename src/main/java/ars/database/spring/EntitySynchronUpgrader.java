@@ -13,7 +13,6 @@ import ars.util.Strings;
 import ars.database.model.TreeModel;
 import ars.database.repository.Repository;
 import ars.database.repository.Repositories;
-import ars.database.repository.RepositoryFactory;
 import ars.spring.context.ApplicationInitializer;
 
 /**
@@ -25,7 +24,6 @@ import ars.spring.context.ApplicationInitializer;
  *            对象类型
  */
 public class EntitySynchronUpgrader<T> extends ApplicationInitializer {
-	private Repository<T> repository;
 	private Comparator<T> comparator;
 	private List<T> entities = Collections.emptyList(); // 对象实体列表
 	private String[] comparators = Strings.EMPTY_ARRAY; // 比较属性
@@ -81,16 +79,16 @@ public class EntitySynchronUpgrader<T> extends ApplicationInitializer {
 							}
 						}
 						if (different) {
-							this.repository.update(source);
+							Repositories.update(source);
 						}
 					}
 					continue outer;
 				}
 			}
 			if (target instanceof TreeModel) {
-				Repositories.saveTree(this.repository, target);
+				Repositories.saveTree((TreeModel) target);
 			} else {
-				this.repository.save(target);
+				Repositories.save(target);
 			}
 		}
 	}
@@ -102,8 +100,8 @@ public class EntitySynchronUpgrader<T> extends ApplicationInitializer {
 			throw new RuntimeException("Target entities has not been initialize");
 		}
 		Class<T> model = (Class<T>) this.entities.get(0).getClass();
-		this.repository = event.getApplicationContext().getBean(RepositoryFactory.class).getRepository(model);
-		String primary = this.repository.getPrimary();
+		Repository<T> repository = Repositories.getRepository(model);
+		String primary = repository.getPrimary();
 		List<String> excludes = new LinkedList<String>();
 		final List<String> conditions = new LinkedList<String>();
 		for (String property : this.comparators) {
@@ -142,7 +140,7 @@ public class EntitySynchronUpgrader<T> extends ApplicationInitializer {
 
 		};
 
-		List<T> sources = this.repository.query().list();
+		List<T> sources = repository.query().list();
 		if (TreeModel.class.isAssignableFrom(model)) {
 			sources = (List<T>) Repositories.mergeTrees((List<TreeModel>) sources);
 		}

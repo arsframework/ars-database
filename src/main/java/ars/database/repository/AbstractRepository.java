@@ -63,7 +63,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
 
 	@Override
 	public String getPrimary() {
-		return DEFAULT_PRIMARY_NAME;
+		return Repositories.DEFAULT_PRIMARY_NAME;
 	}
 
 	@Override
@@ -100,7 +100,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
 			}
 			if (entity instanceof TreeModel) {
 				TreeModel<?> tree = (TreeModel<?>) object;
-				tree.setKey(Repositories.buildKey(tree, ((Number) id).intValue()));
+				tree.setKey(Repositories.buildTreeKey(tree, ((Number) id).intValue()));
 				changed = true;
 			}
 			if (changed) {
@@ -143,7 +143,7 @@ public abstract class AbstractRepository<T> implements Repository<T> {
 							}
 						}
 					}
-					Repositories.refreshKey(tree);
+					Repositories.refreshTreeKey(tree);
 					List<T> relates = this.query().ne("key", key).start("key", key).list();
 					for (int i = 0; i < relates.size(); i++) {
 						TreeModel<?> relate = (TreeModel<?>) relates.get(i);

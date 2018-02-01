@@ -14,11 +14,6 @@ import ars.database.repository.Query;
  */
 public interface Repository<T> {
 	/**
-	 * 默认数据模型主键名称
-	 */
-	public static final String DEFAULT_PRIMARY_NAME = "id";
-
-	/**
 	 * 获取数据模型
 	 * 
 	 * @return 数据模型
