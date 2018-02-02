@@ -18,9 +18,8 @@ public class SaveEvent extends ServiceEvent {
 	private Serializable id; // 对象主键
 	private transient Object entity; // 对象实体
 
-	public SaveEvent(Requester requester, Service<?> service, Serializable id,
-			Object entity) {
-		super(requester, Type.SAVE, service);
+	public SaveEvent(Requester requester, Service<?> service, Serializable id, Object entity) {
+		super(requester, service);
 		if (id == null) {
 			throw new IllegalArgumentException("Illegal id:" + id);
 		}

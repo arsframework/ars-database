@@ -18,10 +18,9 @@ import ars.invoke.event.InvokeCompleteEvent;
  * @author yongqiangwu
  * 
  */
-public class DataSourceRouter extends AbstractRoutingDataSource implements
-		InvokeListener<InvokeEvent> {
+public class DataSourceRouter extends AbstractRoutingDataSource implements InvokeListener<InvokeEvent> {
 	private Map<String, String> routes = new HashMap<String, String>();
-	private ThreadLocal<String> dataSource = new ThreadLocal<String>();
+	private final ThreadLocal<String> dataSource = new ThreadLocal<String>();
 
 	public Map<String, String> getRoutes() {
 		return routes;

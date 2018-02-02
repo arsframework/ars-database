@@ -16,7 +16,7 @@ public class DeleteEvent extends ServiceEvent {
 	private transient Object entity; // 对象实体
 
 	public DeleteEvent(Requester requester, Service<?> service, Object entity) {
-		super(requester, Type.DELETE, service);
+		super(requester, service);
 		if (entity == null) {
 			throw new IllegalArgumentException("Illegal entity:" + entity);
 		}

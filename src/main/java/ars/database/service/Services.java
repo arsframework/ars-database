@@ -34,10 +34,16 @@ public final class Services {
 	}
 
 	public static void setServiceFactory(ServiceFactory serviceFactory) {
-		if (Services.serviceFactory != null) {
-			throw new RuntimeException("Service factory is already initialized");
+		if (serviceFactory == null) {
+			throw new IllegalArgumentException("Illegal serviceFactory:" + serviceFactory);
 		}
-		Services.serviceFactory = serviceFactory;
+		if (Services.serviceFactory == null) {
+			synchronized (Services.class) {
+				if (Services.serviceFactory == null) {
+					Services.serviceFactory = serviceFactory;
+				}
+			}
+		}
 	}
 
 	/**

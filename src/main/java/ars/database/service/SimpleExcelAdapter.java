@@ -28,7 +28,7 @@ public class SimpleExcelAdapter<T> implements ExcelAdapter<T> {
 		return dateFormats;
 	}
 
-	public void setDateFormats(String[] dateFormats) {
+	public void setDateFormats(String... dateFormats) {
 		this.dateFormats = dateFormats;
 	}
 

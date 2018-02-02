@@ -17,7 +17,7 @@ public class QueryEvent extends ServiceEvent {
 	private transient Query<?> query; // 对象查询集合
 
 	public QueryEvent(Requester requester, Service<?> service, Query<?> query) {
-		super(requester, Type.QUERY, service);
+		super(requester, service);
 		if (query == null) {
 			throw new IllegalArgumentException("Illegal query:" + query);
 		}

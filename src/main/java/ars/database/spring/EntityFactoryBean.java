@@ -3,13 +3,11 @@ package ars.database.spring;
 import java.util.Map;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.springframework.beans.factory.FactoryBean;
 
 import ars.util.Beans;
 import ars.database.repository.Query;
-import ars.database.repository.RepositoryFactory;
+import ars.database.repository.Repositories;
 
 /**
  * 对象实体工厂类
@@ -23,9 +21,6 @@ public class EntityFactoryBean implements FactoryBean<Object> {
 	private Class<?> model; // 对象模型
 	private boolean multiple; // 是否获取多个
 	private Map<String, Object> attributes; // 实体属性
-
-	@Resource
-	private RepositoryFactory repositoryFactory;
 
 	public Class<?> getModel() {
 		return model;
@@ -61,7 +56,7 @@ public class EntityFactoryBean implements FactoryBean<Object> {
 				throw new RuntimeException("Attributes has not been initialize");
 			}
 			this.loaded = true;
-			Query<?> query = this.repositoryFactory.getRepository(this.model).query().custom(this.attributes);
+			Query<?> query = Repositories.query(this.model).custom(this.attributes);
 			if (this.multiple) {
 				List<?> objects = query.list();
 				if (Beans.isEmpty(this.entity) || !objects.isEmpty()) {

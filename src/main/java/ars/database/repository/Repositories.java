@@ -58,10 +58,16 @@ public final class Repositories {
 	}
 
 	public static void setRepositoryFactory(RepositoryFactory repositoryFactory) {
-		if (Repositories.repositoryFactory != null) {
-			throw new RuntimeException("Repository factory is already initialized");
+		if (repositoryFactory == null) {
+			throw new IllegalArgumentException("Illegal repositoryFactory:" + repositoryFactory);
 		}
-		Repositories.repositoryFactory = repositoryFactory;
+		if (Repositories.repositoryFactory == null) {
+			synchronized (Repositories.class) {
+				if (Repositories.repositoryFactory == null) {
+					Repositories.repositoryFactory = repositoryFactory;
+				}
+			}
+		}
 	}
 
 	/**

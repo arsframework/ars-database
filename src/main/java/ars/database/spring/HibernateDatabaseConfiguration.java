@@ -3,13 +3,12 @@ package ars.database.spring;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Collections;
 import java.lang.reflect.Modifier;
 
 import org.hibernate.Hibernate;
@@ -76,7 +75,8 @@ import ars.invoke.request.ParameterInvalidException;
  * @author yongqiangwu
  * 
  */
-public class HibernateDatabaseConfiguration extends DatabaseConfiguration implements ObjectAdapter,ServiceListener<ServiceEvent> {
+public class HibernateDatabaseConfiguration extends DatabaseConfiguration
+		implements ObjectAdapter, ServiceListener<ServiceEvent> {
 	private static Map<Class<?>, List<Property>> VALIDATE_MODEL_PROPERTY_MAPPING = new HashMap<Class<?>, List<Property>>(); // 数据模型/属性映射
 	private static Map<Class<?>, Map<Class<?>, List<Property>>> VALIDATE_MODEL_RELATE_MAPPING = new HashMap<Class<?>, Map<Class<?>, List<Property>>>(); // 数据模型关联属性映射
 
@@ -488,18 +488,17 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration implem
 		this.bindValidateProperty(applicationContext);
 		this.registerEventListener(applicationContext);
 	}
-	
-	@Override
-	public boolean isAdaptable(Object object) {
-		return !Hibernate.isInitialized(object);
-	}
-	
+
 	@Override
 	public Object adaption(Object object) {
-		if (object instanceof Set) {
-			return new HashSet<Object>(0);
+		if (Hibernate.isInitialized(object)) {
+			return object;
+		} else if (object instanceof Map) {
+			return Collections.emptyMap();
+		} else if (object instanceof Set) {
+			return Collections.emptySet();
 		} else if (object instanceof List) {
-			return new ArrayList<Object>(0);
+			return Collections.emptyList();
 		}
 		return null;
 	}

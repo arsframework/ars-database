@@ -16,7 +16,7 @@ public class InitEvent extends ServiceEvent {
 	private transient Object entity; // 对象实体
 
 	public InitEvent(Requester requester, Service<?> service, Object entity) {
-		super(requester, Type.INIT, service);
+		super(requester, service);
 		if (entity == null) {
 			throw new IllegalArgumentException("Illegal entity:" + entity);
 		}

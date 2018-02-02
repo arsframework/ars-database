@@ -16,17 +16,13 @@ import ars.database.repository.Query;
  *            数据类型
  */
 public class WrapQuery<T> implements Query<T> {
-	private Query<T> query; // 查询对象
+	protected final Query<T> query; // 查询对象
 
 	public WrapQuery(Query<T> query) {
 		if (query == null) {
 			throw new IllegalArgumentException("Illegal query:" + query);
 		}
 		this.query = query;
-	}
-
-	public Query<T> getQuery() {
-		return query;
 	}
 
 	@Override

@@ -158,7 +158,11 @@ public abstract class AbstractService<T> implements Service<T> {
 	@Override
 	public Repository<T> getRepository() {
 		if (this.repository == null) {
-			this.repository = Repositories.getRepository(this.getModel());
+			synchronized (this) {
+				if (this.repository == null) {
+					this.repository = Repositories.getRepository(this.model);
+				}
+			}
 		}
 		return this.repository;
 	}
@@ -230,7 +234,7 @@ public abstract class AbstractService<T> implements Service<T> {
 
 	@Override
 	public void initObject(Requester requester, T entity, Map<String, Object> parameters) {
-		Class<?> model = this.getRepository().getModel();
+		Class<?> model = this.model;
 		String primary = this.getRepository().getPrimary();
 		while (model != Object.class) {
 			for (Field field : model.getDeclaredFields()) {
@@ -245,7 +249,7 @@ public abstract class AbstractService<T> implements Service<T> {
 				Class<?> type = field.getType();
 				if (TreeModel.class.isAssignableFrom(type)
 						&& (property.equals("parent") || property.equals("children"))) {
-					type = this.getRepository().getModel();
+					type = this.model;
 				}
 				try {
 					Object value = parameters.get(property);

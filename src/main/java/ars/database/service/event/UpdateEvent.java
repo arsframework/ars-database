@@ -16,7 +16,7 @@ public class UpdateEvent extends ServiceEvent {
 	private transient Object entity; // 对象实体
 
 	public UpdateEvent(Requester requester, Service<?> service, Object entity) {
-		super(requester, Type.UPDATE, service);
+		super(requester, service);
 		if (entity == null) {
 			throw new IllegalArgumentException("Illegal entity:" + entity);
 		}

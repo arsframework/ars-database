@@ -7,9 +7,7 @@ import java.util.Map.Entry;
 import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Collections;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.annotation.Annotation;
 
 import org.activiti.engine.ProcessEngine;
 import org.springframework.aop.framework.Advised;
@@ -18,19 +16,15 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import ars.util.Strings;
 import ars.database.service.Service;
 import ars.database.service.Services;
 import ars.database.service.ServiceFactory;
 import ars.database.service.WorkflowService;
 import ars.database.service.event.ServiceEvent;
 import ars.database.service.event.ServiceListener;
-import ars.database.repository.Transfer;
-import ars.database.repository.Transform;
 import ars.database.repository.Repository;
 import ars.database.repository.Repositories;
 import ars.database.repository.RepositoryFactory;
-import ars.database.repository.StandardTransferManager;
 import ars.database.repository.DataConstraintException;
 import ars.invoke.convert.ThrowableResolver;
 
@@ -40,24 +34,15 @@ import ars.invoke.convert.ThrowableResolver;
  * @author yongqiangwu
  * 
  */
-public class DatabaseConfiguration extends StandardTransferManager
+public class DatabaseConfiguration
 		implements ThrowableResolver, ServiceFactory, RepositoryFactory, ApplicationContextAware {
 	/**
 	 * 数据关联异常编码
 	 */
 	public static final int CODE_ERROR_DATA_CONSTRAINT = 52070;
 
-	private String transfer; // 数据转换加载路径（模型全路径名.属性名）
 	private Map<Class<?>, Service<?>> services = Collections.emptyMap();
 	private Map<Class<?>, Repository<?>> repositories = Collections.emptyMap();
-
-	public String getTransfer() {
-		return transfer;
-	}
-
-	public void setTransfer(String transfer) {
-		this.transfer = transfer;
-	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
@@ -81,26 +66,6 @@ public class DatabaseConfiguration extends StandardTransferManager
 				((WorkflowService<?>) service).setProcessEngine(processEngine);
 			}
 			this.services.put(service.getModel(), service);
-
-			// 加载数据查询转换配置
-			Class<?> model = service.getModel();
-			while (model != Object.class) {
-				for (Field field : model.getDeclaredFields()) {
-					String path = model.getName() + "." + field.getName();
-					if (this.transfer == null || Strings.matches(path, this.transfer)) {
-						for (Annotation annotation : field.getAnnotations()) {
-							if (annotation.annotationType() == Transfer.class) {
-								Transfer transfer = (Transfer) annotation;
-								Transform transform = new Transform(transfer.key(), transfer.target(),
-										transfer.resource(), transfer.lazy());
-								this.register(model, field.getName(), transform);
-								break;
-							}
-						}
-					}
-				}
-				model = model.getSuperclass();
-			}
 		}
 
 		// 初始化业务操作事件监听器
