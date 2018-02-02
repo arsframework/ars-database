@@ -309,6 +309,30 @@ public final class Repositories {
 	}
 
 	/**
+	 * 随机抽取对象实例
+	 * 
+	 * @param <M>
+	 *            数据类型
+	 * @param model
+	 *            数据模型
+	 * @return 对象实例
+	 */
+	public static <M> M extract(Class<M> model) {
+		if (model == null) {
+			throw new IllegalArgumentException("Illegal model:" + model);
+		}
+		Repository<M> repository = getRepository(model);
+		int count = repository.query().count();
+		if (count == 0) {
+			return null;
+		}
+		int size = 100;
+		int page = Randoms.randomInteger(1, (int) Math.ceil((double) count / size) + 1);
+		List<M> objects = repository.query().paging(page, size).list();
+		return objects.get(Randoms.randomInteger(0, objects.size()));
+	}
+
+	/**
 	 * 保存对象
 	 * 
 	 * @param object
@@ -385,14 +409,13 @@ public final class Repositories {
 		if (object == null) {
 			throw new IllegalArgumentException("Illegal object:" + object);
 		}
-		TreeModel tree = (TreeModel) object;
-		List<M> children = new ArrayList<M>(tree.getChildren());
-		tree.getChildren().clear();
-		Serializable id = repository.save((M) tree);
-		tree.setId((Integer) id);
+		List<M> children = new ArrayList<M>(object.getChildren());
+		object.getChildren().clear();
+		Serializable id = repository.save((M) object);
+		object.setId((Integer) id);
 		for (int i = 0; i < children.size(); i++) {
 			TreeModel child = (TreeModel) children.get(i);
-			child.setParent(tree);
+			child.setParent(object);
 			saveTree(repository, (M) child);
 		}
 	}
@@ -528,15 +551,7 @@ public final class Repositories {
 
 					@Override
 					public T generate() {
-						Repository<T> repository = getRepository(type);
-						int count = repository.query().count();
-						if (count == 0) {
-							return null;
-						}
-						int size = 100;
-						int page = Randoms.randomInteger(1, (int) Math.ceil((double) count / size) + 1);
-						List<T> objects = repository.query().paging(page, size).list();
-						return objects.get(Randoms.randomInteger(0, objects.size()));
+						return extract(type);
 					}
 
 				};
