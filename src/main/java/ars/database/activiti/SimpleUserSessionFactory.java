@@ -6,19 +6,18 @@ import org.activiti.engine.impl.persistence.entity.UserEntityManager;
 import org.activiti.engine.impl.persistence.entity.UserIdentityManager;
 
 /**
- * 用户管理工厂实现
+ * Activiti用户会话工厂简单实现
  * 
  * @author yongqiangwu
  * 
  */
-public class UserEntityManagerFactory implements SessionFactory {
-	private UserEntityManager manager;
+public class SimpleUserSessionFactory implements SessionFactory {
+	protected final UserEntityManager manager;
 
-	public UserEntityManager getManager() {
-		return manager;
-	}
-
-	public void setManager(UserEntityManager manager) {
+	public SimpleUserSessionFactory(UserEntityManager manager) {
+		if (manager == null) {
+			throw new IllegalArgumentException("Illegal manager:" + manager);
+		}
 		this.manager = manager;
 	}
 
