@@ -202,30 +202,6 @@ public abstract class AbstractService<T> implements Service<T> {
 	}
 
 	@Override
-	public <E extends ServiceEvent> void addListeners(Class<E> type, ServiceListener<E>... listeners) {
-		if (listeners.length > 0) {
-			List<ServiceListener<E>> list = Arrays.asList(listeners);
-			if (type == InitEvent.class) {
-				this.initListeners.addAll(list);
-			} else if (type == SaveEvent.class) {
-				this.saveListeners.addAll(list);
-			} else if (type == QueryEvent.class) {
-				this.queryListeners.addAll(list);
-			} else if (type == UpdateEvent.class) {
-				this.updateListeners.addAll(list);
-			} else if (type == DeleteEvent.class) {
-				this.deleteListeners.addAll(list);
-			} else {
-				this.initListeners.addAll(list);
-				this.saveListeners.addAll(list);
-				this.queryListeners.addAll(list);
-				this.updateListeners.addAll(list);
-				this.deleteListeners.addAll(list);
-			}
-		}
-	}
-
-	@Override
 	public Query<T> getQuery(Requester requester) {
 		Query<T> query = this.getRepository().query();
 		this.onQueryEvent(requester, query);

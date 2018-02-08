@@ -62,41 +62,44 @@ public class DatabaseConfiguration
 		this.services = new HashMap<Class<?>, Service<?>>(services.size());
 		for (Service service : services) {
 			if (service instanceof WorkflowService) {
-				ProcessEngine processEngine = applicationContext.getBean(ProcessEngine.class);
-				((WorkflowService<?>) service).setProcessEngine(processEngine);
+				((WorkflowService<?>) service).setProcessEngine(applicationContext.getBean(ProcessEngine.class));
 			}
 			this.services.put(service.getModel(), service);
 		}
 
 		// 初始化业务操作事件监听器
-		Collection<ServiceListener> listeners = applicationContext.getBeansOfType(ServiceListener.class).values();
-		Map<Class<?>, List<ServiceListener<?>>> listenerGroups = new HashMap<Class<?>, List<ServiceListener<?>>>();
+		Map<Class, List<ServiceListener>> listeners = new HashMap<Class, List<ServiceListener>>();
 		try {
-			for (ServiceListener<?> listener : listeners) {
-				ServiceListener<?> target = null;
+			for (Entry<String, ServiceListener> entry : applicationContext.getBeansOfType(ServiceListener.class)
+					.entrySet()) {
+				ServiceListener target = null;
+				ServiceListener listener = entry.getValue();
 				if (AopUtils.isAopProxy(listener)) {
-					target = (ServiceListener<?>) ((Advised) listener).getTargetSource().getTarget();
+					target = (ServiceListener) ((Advised) listener).getTargetSource().getTarget();
 				}
-				Class<?> etype = null;
+				Class<?> type = null;
 				for (Method method : (target == null ? listener : target).getClass().getMethods()) {
-					if (method.getName().equals("onServiceEvent") && (etype == null || etype == ServiceEvent.class)) {
-						etype = method.getParameterTypes()[0];
+					if (method.getName().equals("onServiceEvent") && (type == null || type == ServiceEvent.class)) {
+						type = method.getParameterTypes()[0];
 					}
 				}
-				List<ServiceListener<?>> listenerGroup = listenerGroups.get(etype);
-				if (listenerGroup == null) {
-					listenerGroup = new LinkedList<ServiceListener<?>>();
-					listenerGroups.put(etype, listenerGroup);
+				List<ServiceListener> groups = listeners.get(type);
+				if (groups == null) {
+					groups = new LinkedList<ServiceListener>();
+					listeners.put(type, groups);
 				}
-				listenerGroup.add(listener);
+				groups.add(listener);
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		for (Entry<Class<?>, List<ServiceListener<?>>> entry : listenerGroups.entrySet()) {
-			ServiceListener<?>[] listenerGroup = entry.getValue().toArray(new ServiceListener[0]);
-			for (Service service : services) {
-				service.addListeners(entry.getKey(), listenerGroup);
+		if (!listeners.isEmpty()) {
+			for (Entry<Class, List<ServiceListener>> entry : listeners.entrySet()) {
+				Class type = entry.getKey();
+				ServiceListener[] _listeners = entry.getValue().toArray(new ServiceListener[0]);
+				for (Service service : services) {
+					service.setListeners(type, _listeners);
+				}
 			}
 		}
 	}

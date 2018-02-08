@@ -45,18 +45,6 @@ public interface Service<T> {
 	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners);
 
 	/**
-	 * 添加对象实体业务操作监听器
-	 * 
-	 * @param <E>
-	 *            事件类型
-	 * @param type
-	 *            事件类型对象
-	 * @param listeners
-	 *            监听器数组
-	 */
-	public <E extends ServiceEvent> void addListeners(Class<E> type, ServiceListener<E>... listeners);
-
-	/**
 	 * 获取数据查询对象
 	 * 
 	 * @param requester
