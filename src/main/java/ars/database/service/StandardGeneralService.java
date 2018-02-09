@@ -163,8 +163,7 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 							target = sheet.createRow(start);
 						} else {
 							Sheet sheet = failed.getSheetAt(failed.getNumberOfSheets() - 1);
-							int last = sheet.getLastRowNum();
-							target = sheet.createRow(last == 0 ? 0 : last + 1);
+							target = sheet.createRow(sheet.getLastRowNum() + 1);
 						}
 						Excels.copy(row, target);
 						int columns = titles.length > 0 ? titles.length : row.getLastCellNum();
