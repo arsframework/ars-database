@@ -19,6 +19,7 @@ import ars.util.Files;
 import ars.util.Nfile;
 import ars.util.Strings;
 import ars.file.office.Excels;
+import ars.invoke.Invokes;
 import ars.invoke.request.Requester;
 import ars.database.model.TreeModel;
 import ars.database.repository.Query;
@@ -26,7 +27,6 @@ import ars.database.repository.Repositories;
 import ars.database.service.ExcelAdapter;
 import ars.database.service.ImportService;
 import ars.database.service.AbstractService;
-import ars.database.service.SimpleExcelAdapter;
 
 /**
  * 通用业务操作接口抽象实现
@@ -38,7 +38,7 @@ import ars.database.service.SimpleExcelAdapter;
  */
 public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	private String directory = Strings.TEMP_PATH;
-	private ExcelAdapter<T> excelAdapter = new SimpleExcelAdapter<T>();
+	private Class<? extends ExcelAdapter<T>> excelAdapterClass = null;
 
 	public String getDirectory() {
 		return directory;
@@ -48,12 +48,38 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 		this.directory = directory;
 	}
 
-	public ExcelAdapter<T> getExcelAdapter() {
-		return excelAdapter;
+	public Class<? extends ExcelAdapter<T>> getExcelAdapterClass() {
+		return excelAdapterClass;
 	}
 
-	public void setExcelAdapter(ExcelAdapter<T> excelAdapter) {
-		this.excelAdapter = excelAdapter;
+	public void setExcelAdapterClass(Class<? extends ExcelAdapter<T>> excelAdapterClass) {
+		this.excelAdapterClass = excelAdapterClass;
+	}
+
+	/**
+	 * 获取Excel数据对象适配器
+	 * 
+	 * @return Excel数据对象适配器
+	 */
+	protected ExcelAdapter<T> getExcelAdapter() {
+		return this.excelAdapterClass == null ? new ExcelAdapter<T>() {
+
+			@Override
+			public String[] getTitles(Requester requester, Service<T> service) {
+				return Invokes.getPropertyMessages(requester, getModel());
+			}
+
+			@Override
+			public T read(Requester requester, Service<T> service, Row row, int count) {
+				return Excels.getObject(row, getModel());
+			}
+
+			@Override
+			public void write(Requester requester, Service<T> service, T entity, Row row, int count) {
+				Excels.setObject(row, entity);
+			}
+
+		} : Beans.getInstance(this.excelAdapterClass);
 	}
 
 	/**
@@ -108,47 +134,47 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @param parameters
 	 *            请求参数
 	 * @return 数据导入结果对象
-	 * @throws Exception 操作异常
+	 * @throws Exception
+	 *             操作异常
 	 */
 	protected ImportService.Result import_(final Requester requester, final Nfile file, final Integer start,
 			final ExcelAdapter<T> adapter, Map<String, Object> parameters) throws Exception {
 		long timestamp = System.currentTimeMillis();
-		final Workbook failed = new SXSSFWorkbook(100);
 		final ImportService.Result result = new ImportService.Result();
 		final String[] titles = start > 0 ? Excels.getTitles(file, start - 1) : Strings.EMPTY_ARRAY;
+		final Workbook failed = new SXSSFWorkbook(100);
 		try {
-			adapter.begin(requester, this);
-			Excels.iteration(file, start, new Excels.Reader<T>() {
+			int count = Excels.iteration(file, start, new Excels.Reader<T>() {
 
 				@Override
-				public T read(Row row) {
-					if (row == null || Excels.isEmpty(row)) {
-						return null;
-					}
+				public T read(Row row, int count) {
 					try {
-						T entity = adapter.read(requester, StandardGeneralService.this, row);
+						T entity = adapter.read(requester, StandardGeneralService.this, row, count);
 						if (entity != null) {
 							saveObject(requester, entity);
 						}
 					} catch (Exception e) {
-						result.setFailed(result.getFailed() + 1);
-						Sheet sheet = failed.getSheetAt(failed.getNumberOfSheets() - 1);
-						int index = sheet.getLastRowNum() + 1;
-						if (result.getFailed() == 1 || result.getFailed() % 60000 == 1) {
-							sheet = failed.createSheet();
-							Excels.setTitles(sheet.createRow(0), titles);
-							index = 1;
+						Row target = null;
+						if (result.getFailed() % 50000 == 0) {
+							Sheet sheet = failed.createSheet();
+							if (titles.length > 0) {
+								Excels.setTitles(sheet.createRow(0), titles);
+							}
+							target = sheet.createRow(start);
+						} else {
+							Sheet sheet = failed.getSheetAt(failed.getNumberOfSheets() - 1);
+							int last = sheet.getLastRowNum();
+							target = sheet.createRow(last == 0 ? 0 : last + 1);
 						}
-						Row target = sheet.createRow(index);
 						Excels.copy(row, target);
 						int columns = titles.length > 0 ? titles.length : row.getLastCellNum();
 						Excels.setValue(target.createCell(columns), e.getMessage());
-					} finally {
-						result.setTotal(result.getTotal() + 1);
+						result.setFailed(result.getFailed() + 1);
 					}
 					return null;
 				}
 			});
+			result.setTotal(count);
 			if (result.getFailed() > 0) {
 				String name = new StringBuilder(UUID.randomUUID().toString()).append(".xlsx").toString();
 				File attachment = new File(this.directory, name);
@@ -158,7 +184,6 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 			}
 		} finally {
 			failed.close();
-			adapter.complete(requester, this);
 		}
 		result.setSpend(Dates.getUnitTime(System.currentTimeMillis() - timestamp));
 		return result;
@@ -174,7 +199,8 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @param parameters
 	 *            请求参数
 	 * @return 导出结果
-	 * @throws Exception 操作异常
+	 * @throws Exception
+	 *             操作异常
 	 */
 	public ExportService.Result export(Requester requester, ExcelAdapter<T> adapter, Map<String, Object> parameters)
 			throws Exception {
@@ -183,42 +209,34 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 		Integer size = Beans.toInteger(Integer.class, parameters.remove(Query.SIZE));
 
 		long timestamp = System.currentTimeMillis();
+		String[] titles = adapter.getTitles(requester, this);
 		final ExportService.Result result = new ExportService.Result();
 		Workbook workbook = new SXSSFWorkbook(100);
 		try {
-			adapter.begin(requester, this);
-			Sheet sheet = workbook.createSheet();
-			String[] titles = adapter.getTitles(requester, this);
-			Excels.setTitles(sheet.createRow(0), titles);
 			if (page == null || size == null) {
-				int count = this.getQuery(requester, parameters).count();
-
-				int length = 1000;
-				int pages = count / length;
-				int remain = count % length;
-				if (remain > 0) {
-					pages++;
-				}
-
-				int total = 1;
-				for (int i = 1; i < pages + 1; i++) {
-					if (total > 1 && total % 60000 == 1) {
-						sheet = workbook.createSheet();
-						Excels.setTitles(sheet.createRow(0), titles);
-					}
-					int end = i * length;
-					List<T> objects = this.getQuery(requester, parameters).paging(i, end > count ? remain : length)
-							.list();
+				Sheet sheet = null;
+				int r = 1, count = 0, length = 200;
+				int total = this.getQuery(requester, parameters).count();
+				for (int i = 1, pages = (int) Math.ceil((double) total / length); i <= pages; i++) {
+					List<T> objects = this.getQuery(requester, parameters).paging(i, length).list();
 					for (int n = 0; n < objects.size(); n++) {
-						adapter.write(requester, this, objects.get(n), sheet.createRow(n + 1));
-						result.setTotal(result.getTotal() + 1);
+						if (++count % 50000 == 1) {
+							r = 1;
+							sheet = workbook.createSheet();
+							Excels.setTitles(sheet.createRow(0), titles);
+						}
+						adapter.write(requester, this, objects.get(n), sheet.createRow(r++), count);
 					}
 				}
+				result.setTotal(count);
 			} else {
+				Sheet sheet = workbook.createSheet();
+				Excels.setTitles(sheet.createRow(0), titles);
 				List<T> objects = this.getQuery(requester, parameters).paging(page, size).list();
 				for (int i = 0; i < objects.size(); i++) {
-					adapter.write(requester, this, objects.get(i), sheet.createRow(i + 1));
+					adapter.write(requester, this, objects.get(i), sheet.createRow(i + 1), i + 1);
 				}
+				result.setTotal(objects.size());
 			}
 			String name = new StringBuilder(UUID.randomUUID().toString()).append(".xlsx").toString();
 			File attachment = new File(this.directory, name);
@@ -228,7 +246,6 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 			result.setSpend(Dates.getUnitTime(System.currentTimeMillis() - timestamp));
 		} finally {
 			workbook.close();
-			adapter.complete(requester, this);
 		}
 		return result;
 	}
@@ -373,11 +390,12 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @param parameters
 	 *            请求参数
 	 * @return 数据导入结果对象
-	 * @throws Exception 操作异常
+	 * @throws Exception
+	 *             操作异常
 	 */
 	public ImportService.Result import_(Requester requester, Nfile file, Integer start, Map<String, Object> parameters)
 			throws Exception {
-		return this.import_(requester, file, start, this.excelAdapter, parameters);
+		return this.import_(requester, file, start, this.getExcelAdapter(), parameters);
 	}
 
 	/**
@@ -388,10 +406,11 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @param parameters
 	 *            请求参数
 	 * @return 导出结果
-	 * @throws Exception 操作异常
+	 * @throws Exception
+	 *             操作异常
 	 */
 	public ExportService.Result export(Requester requester, Map<String, Object> parameters) throws Exception {
-		return this.export(requester, this.excelAdapter, parameters);
+		return this.export(requester, this.getExcelAdapter(), parameters);
 	}
 
 	/**

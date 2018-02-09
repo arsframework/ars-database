@@ -15,16 +15,6 @@ import ars.database.service.Service;
  */
 public interface ExcelAdapter<T> {
 	/**
-	 * 开始适配
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param service
-	 *            业务操作对象
-	 */
-	public void begin(Requester requester, Service<T> service);
-
-	/**
 	 * 获取标题
 	 * 
 	 * @param requester
@@ -44,9 +34,11 @@ public interface ExcelAdapter<T> {
 	 *            业务操作对象
 	 * @param row
 	 *            数据行对象
+	 * @param count
+	 *            读取数量
 	 * @return 对象实体
 	 */
-	public T read(Requester requester, Service<T> service, Row row);
+	public T read(Requester requester, Service<T> service, Row row, int count);
 
 	/**
 	 * 将对象实体写入到Excel数据行
@@ -59,17 +51,9 @@ public interface ExcelAdapter<T> {
 	 *            对象实体
 	 * @param row
 	 *            数据行对象
+	 * @param count
+	 *            写入数量
 	 */
-	public void write(Requester requester, Service<T> service, T entity, Row row);
-
-	/**
-	 * 完成适配
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param service
-	 *            业务操作对象
-	 */
-	public void complete(Requester requester, Service<T> service);
+	public void write(Requester requester, Service<T> service, T entity, Row row, int count);
 
 }
