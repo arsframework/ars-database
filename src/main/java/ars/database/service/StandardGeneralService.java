@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.lang.reflect.Field;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -62,24 +63,28 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @return Excel数据对象适配器
 	 */
 	protected ExcelAdapter<T> getExcelAdapter() {
-		return this.excelAdapterClass == null ? new ExcelAdapter<T>() {
+		if (this.excelAdapterClass == null) {
+			final Field[] fields = Beans.getFields(this.getModel());
+			return new ExcelAdapter<T>() {
 
-			@Override
-			public String[] getTitles(Requester requester, Service<T> service) {
-				return Invokes.getPropertyMessages(requester, getModel());
-			}
+				@Override
+				public String[] getTitles(Requester requester, Service<T> service) {
+					return Invokes.getPropertyMessages(requester, getModel());
+				}
 
-			@Override
-			public T read(Requester requester, Service<T> service, Row row, int count) {
-				return Excels.getObject(row, getModel());
-			}
+				@Override
+				public T read(Requester requester, Service<T> service, Row row, int count) {
+					return Excels.getObject(row, getModel(), fields);
+				}
 
-			@Override
-			public void write(Requester requester, Service<T> service, T entity, Row row, int count) {
-				Excels.setObject(row, entity);
-			}
+				@Override
+				public void write(Requester requester, Service<T> service, T entity, Row row, int count) {
+					Excels.setObject(row, entity, fields);
+				}
 
-		} : Beans.getInstance(this.excelAdapterClass);
+			};
+		}
+		return Beans.getInstance(this.excelAdapterClass);
 	}
 
 	/**
