@@ -20,12 +20,20 @@ import ars.database.service.ServiceFactory;
  * 
  */
 public final class Services {
+	/**
+	 * 业务处理对象工厂
+	 */
 	private static ServiceFactory serviceFactory;
 
 	private Services() {
 
 	}
 
+	/**
+	 * 获取业务处理对象工厂
+	 * 
+	 * @return 业务处理对象工厂
+	 */
 	public static ServiceFactory getServiceFactory() {
 		if (serviceFactory == null) {
 			throw new RuntimeException("Service factory has not been initialize");
@@ -33,6 +41,12 @@ public final class Services {
 		return serviceFactory;
 	}
 
+	/**
+	 * 设置业务处理对象工厂
+	 * 
+	 * @param serviceFactory
+	 *            业务处理对象工厂
+	 */
 	public static void setServiceFactory(ServiceFactory serviceFactory) {
 		if (serviceFactory == null) {
 			throw new IllegalArgumentException("Illegal serviceFactory:" + serviceFactory);

@@ -81,15 +81,13 @@ public abstract class AbstractService<T> implements Service<T> {
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param id
-	 *            对象实体主键
 	 * @param entity
 	 *            对象实体
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected void onSaveEvent(Requester requester, Serializable id, T entity) {
+	protected void onSaveEvent(Requester requester, T entity) {
 		if (!this.saveListeners.isEmpty()) {
-			SaveEvent event = new SaveEvent(requester, this, id, entity);
+			SaveEvent event = new SaveEvent(requester, this, entity);
 			for (ServiceListener listener : this.saveListeners) {
 				listener.onServiceEvent(event);
 			}
@@ -123,7 +121,7 @@ public abstract class AbstractService<T> implements Service<T> {
 	 *            对象实体
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected void onUpdateEvent(Requester requester, Object entity) {
+	protected void onUpdateEvent(Requester requester, T entity) {
 		if (!this.updateListeners.isEmpty()) {
 			UpdateEvent event = new UpdateEvent(requester, this, entity);
 			for (ServiceListener listener : this.updateListeners) {
@@ -165,40 +163,6 @@ public abstract class AbstractService<T> implements Service<T> {
 			}
 		}
 		return this.repository;
-	}
-
-	@Override
-	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners) {
-		if (listeners.length > 0) {
-			List<ServiceListener<E>> list = Arrays.asList(listeners);
-			if (type == InitEvent.class) {
-				this.initListeners.clear();
-				this.initListeners.addAll(list);
-			} else if (type == SaveEvent.class) {
-				this.saveListeners.clear();
-				this.saveListeners.addAll(list);
-			} else if (type == QueryEvent.class) {
-				this.queryListeners.clear();
-				this.queryListeners.addAll(list);
-			} else if (type == UpdateEvent.class) {
-				this.updateListeners.clear();
-				this.updateListeners.addAll(list);
-			} else if (type == DeleteEvent.class) {
-				this.deleteListeners.clear();
-				this.deleteListeners.addAll(list);
-			} else {
-				this.initListeners.clear();
-				this.saveListeners.clear();
-				this.queryListeners.clear();
-				this.updateListeners.clear();
-				this.deleteListeners.clear();
-				this.initListeners.addAll(list);
-				this.saveListeners.addAll(list);
-				this.queryListeners.addAll(list);
-				this.updateListeners.addAll(list);
-				this.deleteListeners.addAll(list);
-			}
-		}
 	}
 
 	@Override
@@ -300,8 +264,7 @@ public abstract class AbstractService<T> implements Service<T> {
 				List<?> children = new ArrayList<Object>(tree.getChildren());
 				tree.getChildren().clear();
 				Serializable id = this.getRepository().save(object);
-				this.onSaveEvent(requester, id, object);
-				tree.setId((Integer) id);
+				this.onSaveEvent(requester, object);
 				for (int i = 0; i < children.size(); i++) {
 					TreeModel child = (TreeModel) children.get(i);
 					child.setParent(tree);
@@ -311,7 +274,7 @@ public abstract class AbstractService<T> implements Service<T> {
 			}
 		}
 		Serializable id = this.getRepository().save(object);
-		this.onSaveEvent(requester, id, object);
+		this.onSaveEvent(requester, object);
 		return id;
 	}
 
@@ -330,6 +293,40 @@ public abstract class AbstractService<T> implements Service<T> {
 	public void deleteObject(Requester requester, T object) {
 		this.getRepository().delete(object);
 		this.onDeleteEvent(requester, object);
+	}
+
+	@Override
+	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners) {
+		if (listeners.length > 0) {
+			List<ServiceListener<E>> list = Arrays.asList(listeners);
+			if (type == InitEvent.class) {
+				this.initListeners.clear();
+				this.initListeners.addAll(list);
+			} else if (type == SaveEvent.class) {
+				this.saveListeners.clear();
+				this.saveListeners.addAll(list);
+			} else if (type == QueryEvent.class) {
+				this.queryListeners.clear();
+				this.queryListeners.addAll(list);
+			} else if (type == UpdateEvent.class) {
+				this.updateListeners.clear();
+				this.updateListeners.addAll(list);
+			} else if (type == DeleteEvent.class) {
+				this.deleteListeners.clear();
+				this.deleteListeners.addAll(list);
+			} else {
+				this.initListeners.clear();
+				this.saveListeners.clear();
+				this.queryListeners.clear();
+				this.updateListeners.clear();
+				this.deleteListeners.clear();
+				this.initListeners.addAll(list);
+				this.saveListeners.addAll(list);
+				this.queryListeners.addAll(list);
+				this.updateListeners.addAll(list);
+				this.deleteListeners.addAll(list);
+			}
+		}
 	}
 
 }

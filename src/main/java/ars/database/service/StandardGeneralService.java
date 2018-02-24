@@ -1,32 +1,16 @@
 package ars.database.service;
 
-import java.io.File;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.List;
-import java.util.UUID;
-import java.util.HashMap;
 import java.util.Map.Entry;
-import java.lang.reflect.Field;
-
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import java.io.Serializable;
 
 import ars.util.Beans;
-import ars.util.Dates;
-import ars.util.Files;
-import ars.util.Nfile;
-import ars.util.Strings;
-import ars.file.office.Excels;
-import ars.invoke.Invokes;
 import ars.invoke.request.Requester;
 import ars.database.model.TreeModel;
 import ars.database.repository.Query;
 import ars.database.repository.Repositories;
-import ars.database.service.ExcelAdapter;
-import ars.database.service.ImportService;
+import ars.database.repository.Repository;
 import ars.database.service.AbstractService;
 
 /**
@@ -38,221 +22,16 @@ import ars.database.service.AbstractService;
  *            数据模型
  */
 public abstract class StandardGeneralService<T> extends AbstractService<T> {
-	private String directory = Strings.TEMP_PATH;
-	private Class<? extends ExcelAdapter<T>> excelAdapterClass = null;
-
-	public String getDirectory() {
-		return directory;
-	}
-
-	public void setDirectory(String directory) {
-		this.directory = directory;
-	}
-
-	public Class<? extends ExcelAdapter<T>> getExcelAdapterClass() {
-		return excelAdapterClass;
-	}
-
-	public void setExcelAdapterClass(Class<? extends ExcelAdapter<T>> excelAdapterClass) {
-		this.excelAdapterClass = excelAdapterClass;
-	}
+	/**
+	 * 空参数匹配后缀
+	 */
+	private static final String EMPTY_PARAM_SUFFIX = new StringBuilder(Query.DELIMITER).append(Query.EMPTY).toString();
 
 	/**
-	 * 获取Excel数据对象适配器
-	 * 
-	 * @return Excel数据对象适配器
+	 * 非空参数匹配后缀
 	 */
-	protected ExcelAdapter<T> getExcelAdapter() {
-		if (this.excelAdapterClass == null) {
-			final Field[] fields = Beans.getFields(this.getModel());
-			return new ExcelAdapter<T>() {
-
-				@Override
-				public String[] getTitles(Requester requester, Service<T> service) {
-					return Invokes.getPropertyMessages(requester, getModel());
-				}
-
-				@Override
-				public T read(Requester requester, Service<T> service, Row row, int count) {
-					return Excels.getObject(row, getModel(), fields);
-				}
-
-				@Override
-				public void write(Requester requester, Service<T> service, T entity, Row row, int count) {
-					Excels.setObject(row, entity, fields);
-				}
-
-			};
-		}
-		return Beans.getInstance(this.excelAdapterClass);
-	}
-
-	/**
-	 * 获取查询有效参数（排除参数值为空的参数）
-	 * 
-	 * @param parameters
-	 *            参数键/值对
-	 * @return 有效参数键/值对
-	 */
-	protected Map<String, Object> getEffectiveParameters(Map<String, Object> parameters) {
-		if (parameters == null || parameters.isEmpty()) {
-			return new HashMap<String, Object>(0);
-		}
-		String emptySuffix = new StringBuilder(Query.DELIMITER).append(Query.EMPTY).toString();
-		String nonemptySuffix = new StringBuilder(Query.DELIMITER).append(Query.NOT_EMPTY).toString();
-		Map<String, Object> effectives = new HashMap<String, Object>(parameters.size());
-		for (Entry<String, Object> entry : parameters.entrySet()) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			if (Beans.isEmpty(value) && !key.endsWith(emptySuffix) && !key.endsWith(nonemptySuffix)) {
-				continue;
-			}
-			effectives.put(key, value);
-		}
-		return effectives;
-	}
-
-	/**
-	 * 获取数据查询对象
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param parameters
-	 *            数据过滤参数
-	 * @return 数据查询对象
-	 */
-	protected Query<T> getQuery(Requester requester, Map<String, Object> parameters) {
-		return this.getQuery(requester).custom(parameters);
-	}
-
-	/**
-	 * 数据批量导入
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param file
-	 *            文件对象
-	 * @param start
-	 *            开始数据行（从0开始）
-	 * @param adapter
-	 *            Excel文件适配对象
-	 * @param parameters
-	 *            请求参数
-	 * @return 数据导入结果对象
-	 * @throws Exception
-	 *             操作异常
-	 */
-	protected ImportService.Result import_(final Requester requester, final Nfile file, final Integer start,
-			final ExcelAdapter<T> adapter, Map<String, Object> parameters) throws Exception {
-		long timestamp = System.currentTimeMillis();
-		final ImportService.Result result = new ImportService.Result();
-		final String[] titles = start > 0 ? Excels.getTitles(file, start - 1) : Strings.EMPTY_ARRAY;
-		final Workbook failed = new SXSSFWorkbook(100);
-		try {
-			int count = Excels.iteration(file, start, new Excels.Reader<T>() {
-
-				@Override
-				public T read(Row row, int count) {
-					try {
-						T entity = adapter.read(requester, StandardGeneralService.this, row, count);
-						if (entity != null) {
-							saveObject(requester, entity);
-						}
-					} catch (Exception e) {
-						Row target = null;
-						if (result.getFailed() % 50000 == 0) {
-							Sheet sheet = failed.createSheet();
-							if (titles.length > 0) {
-								Excels.setTitles(sheet.createRow(0), titles);
-							}
-							target = sheet.createRow(start);
-						} else {
-							Sheet sheet = failed.getSheetAt(failed.getNumberOfSheets() - 1);
-							target = sheet.createRow(sheet.getLastRowNum() + 1);
-						}
-						Excels.copy(row, target);
-						int columns = titles.length > 0 ? titles.length : row.getLastCellNum();
-						Excels.setValue(target.createCell(columns), e.getMessage());
-						result.setFailed(result.getFailed() + 1);
-					}
-					return null;
-				}
-			});
-			result.setTotal(count);
-			if (result.getFailed() > 0) {
-				String name = new StringBuilder(UUID.randomUUID().toString()).append(".xlsx").toString();
-				File attachment = new File(this.directory, name);
-				Excels.write(failed, attachment);
-				result.setFile(name);
-				result.setSize(Files.getUnitSize(attachment.length()));
-			}
-		} finally {
-			failed.close();
-		}
-		result.setSpend(Dates.getUnitTime(System.currentTimeMillis() - timestamp));
-		return result;
-	}
-
-	/**
-	 * 数据批量导出
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param adapter
-	 *            Excel文件适配对象
-	 * @param parameters
-	 *            请求参数
-	 * @return 导出结果
-	 * @throws Exception
-	 *             操作异常
-	 */
-	public ExportService.Result export(Requester requester, ExcelAdapter<T> adapter, Map<String, Object> parameters)
-			throws Exception {
-		parameters = requester.getParameters();
-		Integer page = Beans.toInteger(Integer.class, parameters.remove(Query.PAGE));
-		Integer size = Beans.toInteger(Integer.class, parameters.remove(Query.SIZE));
-
-		long timestamp = System.currentTimeMillis();
-		String[] titles = adapter.getTitles(requester, this);
-		final ExportService.Result result = new ExportService.Result();
-		Workbook workbook = new SXSSFWorkbook(100);
-		try {
-			if (page == null || size == null) {
-				Sheet sheet = null;
-				int r = 1, count = 0, length = 200;
-				int total = this.getQuery(requester, parameters).count();
-				for (int i = 1, pages = (int) Math.ceil((double) total / length); i <= pages; i++) {
-					List<T> objects = this.getQuery(requester, parameters).paging(i, length).list();
-					for (int n = 0; n < objects.size(); n++) {
-						if (++count % 50000 == 1) {
-							r = 1;
-							sheet = workbook.createSheet();
-							Excels.setTitles(sheet.createRow(0), titles);
-						}
-						adapter.write(requester, this, objects.get(n), sheet.createRow(r++), count);
-					}
-				}
-				result.setTotal(count);
-			} else {
-				Sheet sheet = workbook.createSheet();
-				Excels.setTitles(sheet.createRow(0), titles);
-				List<T> objects = this.getQuery(requester, parameters).paging(page, size).list();
-				for (int i = 0; i < objects.size(); i++) {
-					adapter.write(requester, this, objects.get(i), sheet.createRow(i + 1), i + 1);
-				}
-				result.setTotal(objects.size());
-			}
-			String name = new StringBuilder(UUID.randomUUID().toString()).append(".xlsx").toString();
-			File attachment = new File(this.directory, name);
-			Excels.write(workbook, attachment);
-			result.setFile(name);
-			result.setSize(Files.getUnitSize(attachment.length()));
-			result.setSpend(Dates.getUnitTime(System.currentTimeMillis() - timestamp));
-		} finally {
-			workbook.close();
-		}
-		return result;
-	}
+	private static final String NONEMPTY_PARAM_SUFFIX = new StringBuilder(Query.DELIMITER).append(Query.NOT_EMPTY)
+			.toString();
 
 	/**
 	 * 新增对象实体
@@ -278,9 +57,22 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 *            数据过滤参数
 	 */
 	public void delete(Requester requester, Map<String, Object> parameters) {
-		Map<String, Object> effectives = this.getEffectiveParameters(parameters);
-		if (!effectives.isEmpty()) {
-			List<T> entities = this.getQuery(requester, effectives).list();
+		boolean effective = false;
+		Query<T> query = this.getQuery(requester);
+		for (Entry<String, Object> entry : parameters.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			if (Beans.isEmpty(value)) {
+				key = key.toLowerCase();
+				if (!key.endsWith(EMPTY_PARAM_SUFFIX) && !key.endsWith(NONEMPTY_PARAM_SUFFIX)) {
+					continue;
+				}
+			}
+			query.custom(entry.getKey(), value);
+			effective = true;
+		}
+		if (effective) {
+			List<T> entities = query.list();
 			for (int i = 0; i < entities.size(); i++) {
 				this.deleteObject(requester, entities.get(i));
 			}
@@ -295,15 +87,41 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @param parameters
 	 *            对象实体参数
 	 */
+	@SuppressWarnings("unchecked")
 	public void update(Requester requester, Map<String, Object> parameters) {
-		String primary = this.getRepository().getPrimary();
+		Repository<T> repository = this.getRepository();
+		String primary = repository.getPrimary();
 		Object[] identifiers = Beans.toArray(Object.class, parameters.get(primary));
 		if (identifiers.length > 0) {
 			List<T> entities = this.getQuery(requester).or(primary, identifiers).list();
 			for (int i = 0; i < entities.size(); i++) {
 				T entity = entities.get(i);
+				Boolean active = entity instanceof TreeModel ? ((TreeModel<?>) entity).getActive() : null;
 				this.initObject(requester, entity, parameters);
 				this.updateObject(requester, entity);
+				if (active != null && active != ((TreeModel<?>) entity).getActive()) {
+					TreeModel<?> tree = (TreeModel<?>) entity;
+					if (tree.getActive() == Boolean.TRUE) {
+						TreeModel<?> parent = (TreeModel<?>) tree.getParent();
+						while (parent != null) {
+							if (parent.getActive() != Boolean.TRUE) {
+								parent.setActive(true);
+								((Repository<TreeModel<?>>) repository).update(parent);
+							}
+							parent = (TreeModel<?>) parent.getParent();
+						}
+					} else if (tree.getActive() == Boolean.FALSE) {
+						List<T> children = repository.query().ne(primary, tree.getId()).eq("active", true)
+								.start("key", tree.getKey()).list();
+						for (int j = 0; j < children.size(); j++) {
+							TreeModel<?> child = (TreeModel<?>) children.get(j);
+							if (child.getActive() != Boolean.FALSE) {
+								child.setActive(false);
+								((Repository<TreeModel<?>>) repository).update(child);
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -318,10 +136,15 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @return 数量
 	 */
 	public int count(Requester requester, Map<String, Object> parameters) {
-		Map<String, Object> effectives = this.getEffectiveParameters(parameters);
-		effectives.remove(Query.PAGE);
-		effectives.remove(Query.SIZE);
-		return this.getQuery(requester, effectives).count();
+		Query<T> query = this.getQuery(requester);
+		for (Entry<String, Object> entry : parameters.entrySet()) {
+			String key = entry.getKey().toLowerCase();
+			if (key.equals(Query.PAGE) || key.equals(Query.SIZE)) {
+				continue;
+			}
+			query.custom(entry.getKey(), entry.getValue());
+		}
+		return query.count();
 	}
 
 	/**
@@ -334,7 +157,7 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @return 统计数据列表
 	 */
 	public List<?> stats(Requester requester, Map<String, Object> parameters) {
-		return this.getQuery(requester, parameters).stats();
+		return this.getQuery(requester).custom(parameters).stats();
 	}
 
 	/**
@@ -347,11 +170,21 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @return 对象实例
 	 */
 	public T object(Requester requester, Map<String, Object> parameters) {
-		Map<String, Object> effectives = this.getEffectiveParameters(parameters);
-		if (effectives.isEmpty()) {
-			return null;
+		boolean effective = false;
+		Query<T> query = this.getQuery(requester);
+		for (Entry<String, Object> entry : parameters.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			if (Beans.isEmpty(value)) {
+				key = key.toLowerCase();
+				if (!key.endsWith(EMPTY_PARAM_SUFFIX) && !key.endsWith(NONEMPTY_PARAM_SUFFIX)) {
+					continue;
+				}
+			}
+			query.custom(entry.getKey(), value);
+			effective = true;
 		}
-		return this.getQuery(requester, effectives).single();
+		return effective ? query.single() : null;
 	}
 
 	/**
@@ -364,7 +197,7 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 * @return 对象实例列表
 	 */
 	public List<T> objects(Requester requester, Map<String, Object> parameters) {
-		return this.getQuery(requester, parameters).list();
+		return this.getQuery(requester).custom(parameters).list();
 	}
 
 	/**
@@ -378,58 +211,8 @@ public abstract class StandardGeneralService<T> extends AbstractService<T> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List<T> trees(Requester requester, Map<String, Object> parameters) {
-		List<T> objects = this.getQuery(requester, parameters).list();
+		List<T> objects = this.getQuery(requester).custom(parameters).list();
 		return (List<T>) Repositories.mergeTrees((List<TreeModel>) objects);
-	}
-
-	/**
-	 * 数据批量导入
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param file
-	 *            文件对象
-	 * @param start
-	 *            开始数据行（从0开始）
-	 * @param parameters
-	 *            请求参数
-	 * @return 数据导入结果对象
-	 * @throws Exception
-	 *             操作异常
-	 */
-	public ImportService.Result import_(Requester requester, Nfile file, Integer start, Map<String, Object> parameters)
-			throws Exception {
-		return this.import_(requester, file, start, this.getExcelAdapter(), parameters);
-	}
-
-	/**
-	 * 数据批量导出
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param parameters
-	 *            请求参数
-	 * @return 导出结果
-	 * @throws Exception
-	 *             操作异常
-	 */
-	public ExportService.Result export(Requester requester, Map<String, Object> parameters) throws Exception {
-		return this.export(requester, this.getExcelAdapter(), parameters);
-	}
-
-	/**
-	 * 下载批量导入（失败）/导出文件
-	 * 
-	 * @param requester
-	 *            请求对象
-	 * @param name
-	 *            文件名称
-	 * @param parameters
-	 *            请求参数
-	 * @return 文件对象
-	 */
-	public Nfile file(Requester requester, String name, Map<String, Object> parameters) {
-		return new Nfile(new File(this.directory, name));
 	}
 
 }

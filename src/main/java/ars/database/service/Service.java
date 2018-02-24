@@ -33,18 +33,6 @@ public interface Service<T> {
 	public Repository<T> getRepository();
 
 	/**
-	 * 设置对象实体业务操作监听器
-	 * 
-	 * @param <E>
-	 *            事件类型
-	 * @param type
-	 *            事件类型对象
-	 * @param listeners
-	 *            监听器数组
-	 */
-	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners);
-
-	/**
 	 * 获取数据查询对象
 	 * 
 	 * @param requester
@@ -95,5 +83,17 @@ public interface Service<T> {
 	 *            数据对象
 	 */
 	public void deleteObject(Requester requester, T object);
+
+	/**
+	 * 设置对象实体业务操作监听器
+	 * 
+	 * @param <E>
+	 *            事件类型
+	 * @param type
+	 *            事件类型对象
+	 * @param listeners
+	 *            监听器数组
+	 */
+	public <E extends ServiceEvent> void setListeners(Class<E> type, ServiceListener<E>... listeners);
 
 }

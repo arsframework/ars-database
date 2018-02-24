@@ -167,7 +167,7 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 					Object relate = repository.query().eq(property.getName(), entity).paging(1, 1).single();
 					if (relate != null) {
 						String message = new StringBuilder(event.getSource().format(foreignKeyClass.getName()))
-								.append('【').append(relate.toString()).append('】').toString();
+								.append('[').append(relate.toString()).append(']').toString();
 						throw new DataConstraintException(message);
 					}
 				}

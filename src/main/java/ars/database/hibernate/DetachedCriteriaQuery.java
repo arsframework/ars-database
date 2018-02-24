@@ -734,7 +734,7 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 		String key = property, handle = EQ;
 		int index = key.indexOf(DELIMITER);
 		if (index > 0) {
-			handle = key.substring(index + DELIMITER.length());
+			handle = key.substring(index + DELIMITER.length()).toLowerCase();
 			key = key.substring(0, index);
 		}
 		if (handle.equals(EMPTY)) {
@@ -1123,43 +1123,45 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> custom(String property, Object value) {
 		if (Strings.isEmpty(property)) {
 			return this;
-		} else if (property.equals(MIN)) {
+		}
+		String lproperty = property.toLowerCase();
+		if (lproperty.equals(MIN)) {
 			if (!Beans.isEmpty(value)) {
 				this.min(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(MAX)) {
+		} else if (lproperty.equals(MAX)) {
 			if (!Beans.isEmpty(value)) {
 				this.max(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(SUM)) {
+		} else if (lproperty.equals(SUM)) {
 			if (!Beans.isEmpty(value)) {
 				this.sum(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(AVG)) {
+		} else if (lproperty.equals(AVG)) {
 			if (!Beans.isEmpty(value)) {
 				this.avg(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(GROUP)) {
+		} else if (lproperty.equals(GROUP)) {
 			if (!Beans.isEmpty(value)) {
 				this.group(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(NUMBER)) {
+		} else if (lproperty.equals(NUMBER)) {
 			if (!Beans.isEmpty(value)) {
 				this.number(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(PROPERTY)) {
+		} else if (lproperty.equals(PROPERTY)) {
 			if (!Beans.isEmpty(value)) {
 				this.property(Beans.toArray(String.class, value));
 			}
-		} else if (property.equals(PAGE)) {
+		} else if (lproperty.equals(PAGE)) {
 			if (!Beans.isEmpty(value)) {
 				this.page = Integer.parseInt(value.toString());
 			}
-		} else if (property.equals(SIZE)) {
+		} else if (lproperty.equals(SIZE)) {
 			if (!Beans.isEmpty(value)) {
 				this.size = Integer.parseInt(value.toString());
 			}
-		} else if (property.equals(ORDER)) {
+		} else if (lproperty.equals(ORDER)) {
 			if (value instanceof Collection) {
 				for (String order : (Collection<String>) value) {
 					this.order(order);
@@ -1171,7 +1173,7 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			} else if (!Beans.isEmpty(value)) {
 				this.order(value.toString());
 			}
-		} else if (property.equals(CONDITION)) {
+		} else if (lproperty.equals(CONDITION)) {
 			if (!Beans.isEmpty(value)) {
 				Logic logic = value instanceof Logic ? (Logic) value : Conditions.parse(value.toString());
 				this.condition(logic);

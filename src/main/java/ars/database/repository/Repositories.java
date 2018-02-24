@@ -44,12 +44,20 @@ public final class Repositories {
 	 */
 	public static final String DEFAULT_PRIMARY_NAME = "id";
 
+	/**
+	 * 数据持久化处理对象工厂
+	 */
 	private static RepositoryFactory repositoryFactory;
 
 	private Repositories() {
 
 	}
 
+	/**
+	 * 获取数据持久化处理对象工厂
+	 * 
+	 * @return 数据持久化处理对象工厂
+	 */
 	public static RepositoryFactory getRepositoryFactory() {
 		if (repositoryFactory == null) {
 			throw new RuntimeException("Repository factory has not been initialize");
@@ -57,6 +65,12 @@ public final class Repositories {
 		return repositoryFactory;
 	}
 
+	/**
+	 * 设置数据持久化处理对象工厂
+	 * 
+	 * @param repositoryFactory
+	 *            数据持久化处理对象工厂
+	 */
 	public static void setRepositoryFactory(RepositoryFactory repositoryFactory) {
 		if (repositoryFactory == null) {
 			throw new IllegalArgumentException("Illegal repositoryFactory:" + repositoryFactory);
@@ -297,6 +311,20 @@ public final class Repositories {
 	}
 
 	/**
+	 * 获取对象主键
+	 * 
+	 * @param object
+	 *            对象实例
+	 * @return 主键标识
+	 */
+	public static Serializable getIdentifier(Object object) {
+		if (object == null) {
+			throw new IllegalArgumentException("Illegal object:" + object);
+		}
+		return (Serializable) Beans.getValue(object, Repositories.getPrimary(object.getClass()));
+	}
+
+	/**
 	 * 根据主键获取对象实例
 	 * 
 	 * @param <M>
@@ -417,8 +445,7 @@ public final class Repositories {
 		}
 		List<M> children = new ArrayList<M>(object.getChildren());
 		object.getChildren().clear();
-		Serializable id = repository.save((M) object);
-		object.setId((Integer) id);
+		repository.save((M) object);
 		for (int i = 0; i < children.size(); i++) {
 			TreeModel child = (TreeModel) children.get(i);
 			child.setParent(object);

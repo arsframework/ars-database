@@ -5,14 +5,16 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.activiti.bpmn.model.EndEvent;
 import org.activiti.bpmn.model.UserTask;
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.StartEvent;
 import org.activiti.bpmn.model.FlowElement;
+import org.activiti.engine.ProcessEngine;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.delegate.event.ActivitiEventListener;
@@ -23,6 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
+import ars.database.service.Workflows;
 import ars.database.activiti.ActivityNode;
 import ars.database.activiti.ProcessConfiguration;
 
@@ -59,8 +62,9 @@ public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguratio
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
 		if (event instanceof ContextRefreshedEvent && !this.deploied) {
-			this.deploied = true;
 			this.deploy(this.processes);
+			Workflows.setEngine(((ApplicationContext) event.getSource()).getBean(ProcessEngine.class));
+			this.deploied = true;
 		}
 	}
 
@@ -77,7 +81,7 @@ public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguratio
 	@Override
 	public List<ActivityNode> getNodes(Class<?> model) {
 		List<ActivityNode> nodes = this.nodes.get(this.getKey(model));
-		return nodes == null ? new ArrayList<ActivityNode>(0) : new ArrayList<ActivityNode>(nodes);
+		return nodes == null ? Collections.<ActivityNode>emptyList() : Collections.unmodifiableList(nodes);
 	}
 
 	@Override
