@@ -86,7 +86,7 @@ public final class Workflows {
 	 *            数据模型
 	 * @return 流程节点列表
 	 */
-	public static List<ActivityNode> getActivityNodes(Class<?> model) {
+	public static List<ActivityNode> getNodes(Class<?> model) {
 		if (model == null) {
 			throw new IllegalArgumentException("Illegal model:" + model);
 		}
@@ -506,7 +506,7 @@ public final class Workflows {
 			throw new IllegalArgumentException("Illegal parameters:" + parameters);
 		}
 		T entity = service.getQuery(requester).custom(parameters).single();
-		List<ActivityNode> nodes = getActivityNodes(service.getModel());
+		List<ActivityNode> nodes = getNodes(service.getModel());
 		ProcessEngineConfiguration configuration = getEngine().getProcessEngineConfiguration();
 		ProcessDiagramGenerator diagramGenerator = configuration.getProcessDiagramGenerator();
 		RepositoryService repositoryService = getEngine().getRepositoryService();

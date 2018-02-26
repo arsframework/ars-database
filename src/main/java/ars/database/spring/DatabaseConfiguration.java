@@ -9,17 +9,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.lang.reflect.Method;
 
-import org.activiti.engine.ProcessEngine;
-import org.springframework.aop.framework.Advised;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.aop.framework.Advised;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import ars.database.service.Service;
 import ars.database.service.Services;
 import ars.database.service.ServiceFactory;
-import ars.database.service.WorkflowService;
 import ars.database.service.event.ServiceEvent;
 import ars.database.service.event.ServiceListener;
 import ars.database.repository.Repository;
@@ -61,9 +59,6 @@ public class DatabaseConfiguration
 		Collection<Service> services = applicationContext.getBeansOfType(Service.class).values();
 		this.services = new HashMap<Class<?>, Service<?>>(services.size());
 		for (Service service : services) {
-			if (service instanceof WorkflowService) {
-				((WorkflowService<?>) service).setProcessEngine(applicationContext.getBean(ProcessEngine.class));
-			}
 			this.services.put(service.getModel(), service);
 		}
 
