@@ -51,11 +51,12 @@ public final class Services {
 		if (serviceFactory == null) {
 			throw new IllegalArgumentException("Illegal serviceFactory:" + serviceFactory);
 		}
-		if (Services.serviceFactory == null) {
-			synchronized (Services.class) {
-				if (Services.serviceFactory == null) {
-					Services.serviceFactory = serviceFactory;
-				}
+		if (Services.serviceFactory != null) {
+			throw new RuntimeException("Service factory has been initialize");
+		}
+		synchronized (Services.class) {
+			if (Services.serviceFactory == null) {
+				Services.serviceFactory = serviceFactory;
 			}
 		}
 	}
