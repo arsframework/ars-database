@@ -75,11 +75,12 @@ public final class Repositories {
 		if (repositoryFactory == null) {
 			throw new IllegalArgumentException("Illegal repositoryFactory:" + repositoryFactory);
 		}
-		if (Repositories.repositoryFactory == null) {
-			synchronized (Repositories.class) {
-				if (Repositories.repositoryFactory == null) {
-					Repositories.repositoryFactory = repositoryFactory;
-				}
+		if (Repositories.repositoryFactory != null) {
+			throw new RuntimeException("Repository factory has been initialize");
+		}
+		synchronized (Repositories.class) {
+			if (Repositories.repositoryFactory == null) {
+				Repositories.repositoryFactory = repositoryFactory;
 			}
 		}
 	}
