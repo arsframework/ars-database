@@ -4,7 +4,7 @@
 
 	<groupId>com.arsframework</groupId>
 	<artifactId>ars-database</artifactId>
-	<version>1.1.8</version>
+	<version>1.1.9</version>
 	<packaging>jar</packaging>
 
 	<name>ars-database</name>
