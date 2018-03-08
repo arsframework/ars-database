@@ -1,6 +1,5 @@
 package ars.database.service;
 
-import java.util.Map;
 import java.util.List;
 import java.io.InputStream;
 import java.io.IOException;
@@ -25,11 +24,9 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
 	 */
-	public void start(Requester requester, Map<String, Object> parameters) {
-		Workflows.startProcess(this, requester, parameters);
+	public void start(Requester requester) {
+		Workflows.startProcess(requester, this);
 	}
 
 	/**
@@ -37,11 +34,9 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            附加参数
 	 */
-	public void complete(Requester requester, Map<String, Object> parameters) {
-		Workflows.completeTask(this, requester, parameters);
+	public void complete(Requester requester) {
+		Workflows.completeTask(requester, this);
 	}
 
 	/**
@@ -49,12 +44,10 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 任务量
 	 */
-	public int workload(Requester requester, Map<String, Object> parameters) {
-		return Workflows.getWorkload(this, requester, parameters);
+	public int workload(Requester requester) {
+		return Workflows.getWorkload(requester, this);
 	}
 
 	/**
@@ -62,12 +55,10 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 对象实例列表
 	 */
-	public List<T> tasks(Requester requester, Map<String, Object> parameters) {
-		return Workflows.getTasks(this, requester, parameters);
+	public List<T> tasks(Requester requester) {
+		return Workflows.getTasks(requester, this);
 	}
 
 	/**
@@ -75,12 +66,10 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 已完成任务量
 	 */
-	public int progress(Requester requester, Map<String, Object> parameters) {
-		return Workflows.getProgress(this, requester, parameters);
+	public int progress(Requester requester) {
+		return Workflows.getProgress(requester, this);
 	}
 
 	/**
@@ -88,12 +77,10 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 对象实例列表
 	 */
-	public List<T> histories(Requester requester, Map<String, Object> parameters) {
-		return Workflows.getHistories(this, requester, parameters);
+	public List<T> histories(Requester requester) {
+		return Workflows.getHistories(requester, this);
 	}
 
 	/**
@@ -101,14 +88,12 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 流程图文件输入流
 	 * @throws IOException
 	 *             IO操作异常
 	 */
-	public InputStream diagram(Requester requester, Map<String, Object> parameters) throws IOException {
-		return Workflows.getDiagram(this, requester, parameters);
+	public InputStream diagram(Requester requester) throws IOException {
+		return Workflows.getDiagram(requester, this);
 	}
 
 	/**
@@ -116,11 +101,9 @@ public abstract class StandardWorkflowService<T extends Model> extends StandardG
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
 	 * @return 状态列表
 	 */
-	public List<ActivityNode> nodes(Requester requester, Map<String, Object> parameters) {
+	public List<ActivityNode> nodes(Requester requester) {
 		return Workflows.getNodes(this.getModel());
 	}
 

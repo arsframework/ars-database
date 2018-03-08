@@ -34,8 +34,8 @@ import ars.util.Conditions.And;
 import ars.util.Conditions.Logic;
 import ars.util.Conditions.Condition;
 import ars.database.repository.Query;
-import ars.database.hibernate.Hibernates;
 import ars.database.repository.Repositories;
+import ars.database.hibernate.Hibernates;
 
 /**
  * Hibernate离线查询实现

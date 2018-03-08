@@ -1,6 +1,5 @@
 package ars.database.service;
 
-import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Collections;
@@ -136,29 +135,23 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param entity
 	 *            对象实体
-	 * @param parameters
-	 *            请求参数
 	 * @return 工作流实例
 	 */
-	public static <T extends Model> ProcessInstance startProcess(Service<T> service, Requester requester, T entity,
-			Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> ProcessInstance startProcess(Requester requester, Service<T> service, T entity) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
 		if (entity == null) {
 			throw new IllegalArgumentException("Illegal entity:" + entity);
-		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
 		}
 		if (entity.getProcess() != null) {
 			throw new RuntimeException("Process is already started:" + entity);
@@ -166,7 +159,7 @@ public final class Workflows {
 		RuntimeService runtimeService = getEngine().getRuntimeService();
 		ProcessConfiguration configuration = getConfiguration();
 		ProcessInstance process = runtimeService.startProcessInstanceByKey(configuration.getKey(service.getModel()),
-				parameters);
+				requester.getParameters());
 		List<ActivityNode> nodes = configuration.getNodes(service.getModel());
 		entity.setActive(false);
 		entity.setProcess(process.getId());
@@ -182,30 +175,24 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 */
-	public static <T extends Model> void startProcess(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> void startProcess(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
 		String primary = service.getRepository().getPrimary();
-		Object[] identifiers = Beans.toArray(Object.class, parameters.get(primary));
+		Object[] identifiers = Beans.toArray(Object.class, requester.getParameter(primary));
 		if (identifiers.length > 0) {
 			List<T> objects = service.getQuery(requester).or(primary, identifiers).list();
 			for (int i = 0; i < objects.size(); i++) {
-				startProcess(service, requester, objects.get(i), parameters);
+				startProcess(requester, service, objects.get(i));
 			}
 		}
 	}
@@ -215,34 +202,29 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param entity
 	 *            对象实体
 	 * @param assignee
 	 *            任务接收者标识
-	 * @param parameters
-	 *            工作流上下文参数
 	 * @return 任务对象
 	 */
-	public static <T extends Model> Task completeTask(Service<T> service, Requester requester, T entity,
-			String assignee, Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> Task completeTask(Requester requester, Service<T> service, T entity,
+			String assignee) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
+		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
 		if (entity == null) {
 			throw new IllegalArgumentException("Illegal entity:" + entity);
 		}
 		if (assignee == null) {
 			throw new IllegalArgumentException("Illegal assignee:" + assignee);
-		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
 		}
 		Task task = getTask(entity.getProcess(), assignee);
 		if (task == null) {
@@ -255,7 +237,7 @@ public final class Workflows {
 		if (node == null) {
 			throw new RuntimeException("Activity node does not exist with id:" + entity.getStatus());
 		}
-		taskService.complete(task.getId(), parameters);
+		taskService.complete(task.getId(), requester.getParameters());
 		synchronized (entity.getProcess().intern()) {
 			if (getProcess(entity.getProcess()) == null) { // 流程已完成
 				entity.setActive(true);
@@ -285,30 +267,24 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            工作流上下文参数
+	 * @param service
+	 *            业务处理对象
 	 */
-	public static <T extends Model> void completeTask(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> void completeTask(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
 		String primary = service.getRepository().getPrimary();
-		Object[] identifiers = Beans.toArray(Object.class, parameters.get(primary));
+		Object[] identifiers = Beans.toArray(Object.class, requester.getParameter(primary));
 		if (identifiers.length > 0) {
 			List<T> objects = service.getQuery(requester).or(primary, identifiers).list();
 			for (int i = 0; i < objects.size(); i++) {
-				completeTask(service, requester, objects.get(i), requester.getUser(), parameters);
+				completeTask(requester, service, objects.get(i), requester.getUser());
 			}
 		}
 	}
@@ -318,29 +294,23 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param assignee
 	 *            任务接收者标识
-	 * @param parameters
-	 *            请求参数
 	 * @return 对象集合
 	 */
-	public static <T extends Model> Query<T> getTaskQuery(Service<T> service, Requester requester, String assignee,
-			Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> Query<T> getTaskQuery(Requester requester, Service<T> service, String assignee) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
 		if (assignee == null) {
 			throw new IllegalArgumentException("Illegal assignee:" + assignee);
-		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
 		}
 		List<Task> tasks = getEngine().getTaskService().createTaskQuery().taskCandidateUser(assignee).list();
 		if (tasks.isEmpty()) {
@@ -350,7 +320,7 @@ public final class Workflows {
 		for (int i = 0; i < tasks.size(); i++) {
 			processes[i] = tasks.get(i).getProcessInstanceId();
 		}
-		return service.getQuery(requester).in("process", processes).custom(parameters);
+		return service.getQuery(requester).in("process", processes).custom(requester.getParameters());
 	}
 
 	/**
@@ -358,29 +328,23 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param assignee
 	 *            任务接收者标识
-	 * @param parameters
-	 *            请求参数
 	 * @return 对象集合
 	 */
-	public static <T extends Model> Query<T> getFinishQuery(Service<T> service, Requester requester, String assignee,
-			Map<String, Object> parameters) {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> Query<T> getFinishQuery(Requester requester, Service<T> service, String assignee) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
 		if (assignee == null) {
 			throw new IllegalArgumentException("Illegal assignee:" + assignee);
-		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
 		}
 		HistoryService historyService = getEngine().getHistoryService();
 		List<HistoricTaskInstance> historicTaskInstances = historyService.createHistoricTaskInstanceQuery()
@@ -392,7 +356,7 @@ public final class Workflows {
 		for (int i = 0; i < historicTaskInstances.size(); i++) {
 			processes[i] = historicTaskInstances.get(i).getProcessInstanceId();
 		}
-		return service.getQuery(requester).in("process", processes).custom(parameters);
+		return service.getQuery(requester).in("process", processes).custom(requester.getParameters());
 	}
 
 	/**
@@ -400,20 +364,20 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 * @return 任务量
 	 */
-	public static <T extends Model> int getWorkload(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
+	public static <T extends Model> int getWorkload(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		return getTaskQuery(service, requester, requester.getUser(), parameters).count();
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
+		return getTaskQuery(requester, service, requester.getUser()).count();
 	}
 
 	/**
@@ -421,20 +385,20 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 * @return 任务列表
 	 */
-	public static <T extends Model> List<T> getTasks(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
+	public static <T extends Model> List<T> getTasks(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		return getTaskQuery(service, requester, requester.getUser(), parameters).list();
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
+		return getTaskQuery(requester, service, requester.getUser()).list();
 	}
 
 	/**
@@ -442,20 +406,20 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 * @return 已完成任务量
 	 */
-	public static <T extends Model> int getProgress(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
+	public static <T extends Model> int getProgress(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		return getFinishQuery(service, requester, requester.getUser(), parameters).count();
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
+		return getFinishQuery(requester, service, requester.getUser()).count();
 	}
 
 	/**
@@ -463,20 +427,20 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 * @return 历史任务列表
 	 */
-	public static <T extends Model> List<T> getHistories(Service<T> service, Requester requester,
-			Map<String, Object> parameters) {
+	public static <T extends Model> List<T> getHistories(Requester requester, Service<T> service) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		return getFinishQuery(service, requester, requester.getUser(), parameters).list();
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
+		}
+		return getFinishQuery(requester, service, requester.getUser()).list();
 	}
 
 	/**
@@ -484,28 +448,22 @@ public final class Workflows {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
+	 * @param service
+	 *            业务处理对象
 	 * @return 流程图数据输入流
 	 * @throws IOException
 	 *             IO操作异常
 	 */
-	public static <T extends Model> InputStream getDiagram(Service<T> service, Requester requester,
-			Map<String, Object> parameters) throws IOException {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
+	public static <T extends Model> InputStream getDiagram(Requester requester, Service<T> service) throws IOException {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
-		if (parameters == null) {
-			throw new IllegalArgumentException("Illegal parameters:" + parameters);
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
-		T entity = service.getQuery(requester).custom(parameters).single();
+		T entity = service.getQuery(requester, true).custom(requester.getParameters()).single();
 		List<ActivityNode> nodes = getNodes(service.getModel());
 		ProcessEngineConfiguration configuration = getEngine().getProcessEngineConfiguration();
 		ProcessDiagramGenerator diagramGenerator = configuration.getProcessDiagramGenerator();

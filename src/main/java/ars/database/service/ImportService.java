@@ -1,7 +1,6 @@
 package ars.database.service;
 
 import java.io.File;
-import java.util.Map;
 
 import ars.util.Nfile;
 import ars.invoke.local.Api;
@@ -28,16 +27,13 @@ public interface ImportService<T> extends Service<T> {
 	 *            导入文件对象
 	 * @param start
 	 *            开始数据行下标（从0开始）
-	 * @param parameters
-	 *            请求参数
 	 * @return 导入结果对象
 	 * @throws Exception
 	 *             操作异常
 	 */
 	@Api("input")
 	public Imexports.Result input(Requester requester, @Param(name = "file", required = true) Nfile file,
-			@Param(name = "start", required = true, regex = "^[0-9]+$") Integer start, Map<String, Object> parameters)
-			throws Exception;
+			@Param(name = "start", required = true, regex = "^[0-9]+$") Integer start) throws Exception;
 
 	/**
 	 * 下载批量导入失败文件
@@ -46,12 +42,9 @@ public interface ImportService<T> extends Service<T> {
 	 *            请求对象
 	 * @param name
 	 *            文件名称
-	 * @param parameters
-	 *            请求参数
 	 * @return 文件对象
 	 */
 	@Api("download")
-	public File download(Requester requester, @Param(name = "name", required = true) String name,
-			Map<String, Object> parameters);
+	public File download(Requester requester, @Param(name = "name", required = true) String name);
 
 }

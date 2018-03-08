@@ -2,7 +2,6 @@ package ars.database.service;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -168,10 +167,10 @@ public final class Imexports {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param file
 	 *            文件对象
 	 * @param start
@@ -180,11 +179,11 @@ public final class Imexports {
 	 * @throws Exception
 	 *             操作异常
 	 */
-	public static <T> Result input(Service<T> service, Requester requester, Nfile file, int start) throws Exception {
+	public static <T> Result input(Requester requester, Service<T> service, Nfile file, int start) throws Exception {
 		if (service == null) {
 			throw new IllegalArgumentException("Illegal service:" + service);
 		}
-		return input(service, requester, file, start, getExcelAdapter(service.getModel()));
+		return input(requester, service, file, start, getExcelAdapter(service.getModel()));
 	}
 
 	/**
@@ -192,10 +191,10 @@ public final class Imexports {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param file
 	 *            文件对象
 	 * @param start
@@ -206,13 +205,13 @@ public final class Imexports {
 	 * @throws Exception
 	 *             操作异常
 	 */
-	public static <T> Result input(final Service<T> service, final Requester requester, final Nfile file,
+	public static <T> Result input(final Requester requester, final Service<T> service, final Nfile file,
 			final int start, final ExcelAdapter<T> adapter) throws Exception {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
+		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
 		if (file == null) {
 			throw new IllegalArgumentException("Illegal file:" + file);
@@ -277,19 +276,19 @@ public final class Imexports {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @return 导出结果
 	 * @throws Exception
 	 *             操作异常
 	 */
-	public static <T> Result output(final Service<T> service, Requester requester) throws Exception {
+	public static <T> Result output(Requester requester, Service<T> service) throws Exception {
 		if (service == null) {
 			throw new IllegalArgumentException("Illegal service:" + service);
 		}
-		return output(service, requester, getExcelAdapter(service.getModel()));
+		return output(requester, service, getExcelAdapter(service.getModel()));
 	}
 
 	/**
@@ -297,42 +296,47 @@ public final class Imexports {
 	 * 
 	 * @param <T>
 	 *            数据类型
-	 * @param service
-	 *            业务处理对象
 	 * @param requester
 	 *            请求对象
+	 * @param service
+	 *            业务处理对象
 	 * @param adapter
 	 *            Excel文件适配对象
 	 * @return 导出结果
 	 * @throws Exception
 	 *             操作异常
 	 */
-	public static <T> Result output(final Service<T> service, Requester requester, ExcelAdapter<T> adapter)
+	public static <T> Result output(Requester requester, final Service<T> service, ExcelAdapter<T> adapter)
 			throws Exception {
-		if (service == null) {
-			throw new IllegalArgumentException("Illegal service:" + service);
-		}
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
+		}
+		if (service == null) {
+			throw new IllegalArgumentException("Illegal service:" + service);
 		}
 		if (adapter == null) {
 			throw new IllegalArgumentException("Illegal adapter:" + adapter);
 		}
-		Map<String, Object> parameters = requester.getParameters();
-		Integer page = Beans.toInteger(Integer.class, parameters.remove(Query.PAGE));
-		Integer size = Beans.toInteger(Integer.class, parameters.remove(Query.SIZE));
-
 		long timestamp = System.currentTimeMillis();
 		String[] titles = adapter.getTitles(requester, service);
 		final Result result = new Result();
 		Workbook workbook = new SXSSFWorkbook(100);
 		try {
-			if (page == null || size == null) {
+			if (requester.hasParameter(Query.PAGE) && requester.hasParameter(Query.SIZE)) {
+				Sheet sheet = workbook.createSheet();
+				Excels.setTitles(sheet.createRow(0), titles);
+				List<T> objects = service.getQuery(requester).custom(requester.getParameters()).list();
+				for (int i = 0; i < objects.size(); i++) {
+					adapter.write(requester, service, objects.get(i), sheet.createRow(i + 1), i + 1);
+				}
+				result.setTotal(objects.size());
+			} else {
 				Sheet sheet = null;
 				int r = 1, count = 0, length = 200;
-				int total = service.getQuery(requester).custom(parameters).count();
+				int total = service.getQuery(requester).custom(requester.getParameters()).count();
 				for (int i = 1, pages = (int) Math.ceil((double) total / length); i <= pages; i++) {
-					List<T> objects = service.getQuery(requester).custom(parameters).paging(i, length).list();
+					List<T> objects = service.getQuery(requester).custom(requester.getParameters()).paging(i, length)
+							.list();
 					for (int n = 0; n < objects.size(); n++) {
 						if (++count % 50000 == 1) {
 							r = 1;
@@ -343,14 +347,6 @@ public final class Imexports {
 					}
 				}
 				result.setTotal(count);
-			} else {
-				Sheet sheet = workbook.createSheet();
-				Excels.setTitles(sheet.createRow(0), titles);
-				List<T> objects = service.getQuery(requester).custom(parameters).paging(page, size).list();
-				for (int i = 0; i < objects.size(); i++) {
-					adapter.write(requester, service, objects.get(i), sheet.createRow(i + 1), i + 1);
-				}
-				result.setTotal(objects.size());
 			}
 			String name = new StringBuilder(UUID.randomUUID().toString()).append(".xlsx").toString();
 			File attachment = new File(DIRECTORY, name);

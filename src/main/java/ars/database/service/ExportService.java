@@ -1,7 +1,6 @@
 package ars.database.service;
 
 import java.io.File;
-import java.util.Map;
 
 import ars.invoke.local.Api;
 import ars.invoke.local.Param;
@@ -23,14 +22,12 @@ public interface ExportService<T> extends Service<T> {
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            请求参数
 	 * @return 导出结果
 	 * @throws Exception
 	 *             操作异常
 	 */
 	@Api("output")
-	public Imexports.Result output(Requester requester, Map<String, Object> parameters) throws Exception;
+	public Imexports.Result output(Requester requester) throws Exception;
 
 	/**
 	 * 下载批量导出文件
@@ -39,12 +36,9 @@ public interface ExportService<T> extends Service<T> {
 	 *            请求对象
 	 * @param name
 	 *            文件名称
-	 * @param parameters
-	 *            请求参数
 	 * @return 文件对象
 	 */
 	@Api("download")
-	public File download(Requester requester, @Param(name = "name", required = true) String name,
-			Map<String, Object> parameters);
+	public File download(Requester requester, @Param(name = "name", required = true) String name);
 
 }

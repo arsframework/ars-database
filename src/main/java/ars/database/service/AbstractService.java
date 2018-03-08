@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Date;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
@@ -41,6 +42,18 @@ import ars.invoke.request.ParameterInvalidException;
  *            数据模型
  */
 public abstract class AbstractService<T> implements Service<T> {
+	/**
+	 * 空参数匹配后缀
+	 */
+	protected static final String EMPTY_PARAM_SUFFIX = new StringBuilder(Query.DELIMITER).append(Query.EMPTY)
+			.toString();
+
+	/**
+	 * 非空参数匹配后缀
+	 */
+	protected static final String NONEMPTY_PARAM_SUFFIX = new StringBuilder(Query.DELIMITER).append(Query.NOT_EMPTY)
+			.toString();
+
 	private Class<T> model;
 	private Repository<T> repository;
 	private List<ServiceListener<?>> initListeners = new LinkedList<ServiceListener<?>>();
@@ -167,15 +180,41 @@ public abstract class AbstractService<T> implements Service<T> {
 
 	@Override
 	public Query<T> getQuery(Requester requester) {
-		Query<T> query = this.getRepository().query();
+		return this.getQuery(requester, false);
+	}
+
+	@Override
+	public Query<T> getQuery(Requester requester, boolean accurate) {
+		Query<T> query = null;
+		if (accurate) {
+			for (Entry<String, Object> entry : requester.getParameters().entrySet()) {
+				Object value = entry.getValue();
+				if (Beans.isEmpty(value)) {
+					String key = entry.getKey().toLowerCase();
+					if (key.endsWith(EMPTY_PARAM_SUFFIX) || key.endsWith(NONEMPTY_PARAM_SUFFIX)) {
+						query = this.getRepository().query();
+						break;
+					}
+				} else {
+					query = this.getRepository().query();
+					break;
+				}
+			}
+		} else {
+			query = this.getRepository().query();
+		}
+		if (query == null) {
+			query = Repositories.emptyQuery();
+		}
 		this.onQueryEvent(requester, query);
 		return query;
 	}
 
 	@Override
-	public void initObject(Requester requester, T entity, Map<String, Object> parameters) {
+	public void initObject(Requester requester, T entity) {
 		Class<?> model = this.model;
 		String primary = this.getRepository().getPrimary();
+		Map<String, Object> parameters = requester.getParameters();
 		while (model != Object.class) {
 			for (Field field : model.getDeclaredFields()) {
 				String property = field.getName();

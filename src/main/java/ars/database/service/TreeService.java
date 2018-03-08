@@ -1,6 +1,5 @@
 package ars.database.service;
 
-import java.util.Map;
 import java.util.List;
 
 import ars.invoke.local.Api;
@@ -21,11 +20,9 @@ public interface TreeService<T> extends Service<T> {
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            过滤参数
 	 * @return 树对象实例列表
 	 */
 	@Api("trees")
-	public List<T> trees(Requester requester, Map<String, Object> parameters);
+	public List<T> trees(Requester requester);
 
 }

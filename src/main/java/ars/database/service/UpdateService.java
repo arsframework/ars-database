@@ -1,8 +1,7 @@
 package ars.database.service;
 
-import java.util.Map;
-
 import ars.invoke.local.Api;
+import ars.invoke.local.Param;
 import ars.invoke.request.Requester;
 import ars.database.service.Service;
 
@@ -20,10 +19,10 @@ public interface UpdateService<T> extends Service<T> {
 	 * 
 	 * @param requester
 	 *            请求对象
-	 * @param parameters
-	 *            对象实体参数
+	 * @param identifiers
+	 *            对象主键数组
 	 */
 	@Api("update")
-	public void update(Requester requester, Map<String, Object> parameters);
+	public void update(Requester requester, @Param(name = "id", required = true) Object[] identifiers);
 
 }

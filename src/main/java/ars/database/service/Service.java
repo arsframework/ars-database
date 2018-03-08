@@ -1,6 +1,5 @@
 package ars.database.service;
 
-import java.util.Map;
 import java.io.Serializable;
 
 import ars.invoke.request.Requester;
@@ -42,16 +41,25 @@ public interface Service<T> {
 	public Query<T> getQuery(Requester requester);
 
 	/**
+	 * 获取数据查询对象
+	 * 
+	 * @param requester
+	 *            请求对象
+	 * @param accurate
+	 *            是否精确查询（排除无效参数）
+	 * @return 数据查询对象
+	 */
+	public Query<T> getQuery(Requester requester, boolean accurate);
+
+	/**
 	 * 对象初始化
 	 * 
 	 * @param requester
 	 *            请求对象
 	 * @param entity
 	 *            对象实体
-	 * @param parameters
-	 *            初始化参数
 	 */
-	public void initObject(Requester requester, T entity, Map<String, Object> parameters);
+	public void initObject(Requester requester, T entity);
 
 	/**
 	 * 将对象持久化
