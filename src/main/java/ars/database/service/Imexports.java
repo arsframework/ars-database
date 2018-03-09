@@ -17,12 +17,12 @@ import ars.util.Dates;
 import ars.util.Files;
 import ars.util.Nfile;
 import ars.util.Strings;
+import ars.util.AbstractTimerServer;
 import ars.invoke.Invokes;
 import ars.invoke.request.Requester;
 import ars.file.office.Excels;
 import ars.database.service.Service;
 import ars.database.repository.Query;
-import ars.server.task.AbstractTaskServer;
 
 /**
  * 数据导入/导出操作工具类
@@ -46,7 +46,7 @@ public final class Imexports {
 		if (!DIRECTORY.exists()) {
 			DIRECTORY.mkdirs();
 		}
-		AbstractTaskServer cleanupServer = new AbstractTaskServer() {
+		AbstractTimerServer cleaner = new AbstractTimerServer() {
 
 			@Override
 			protected void execute() throws Exception {
@@ -65,8 +65,8 @@ public final class Imexports {
 			}
 
 		};
-		cleanupServer.setExpression("0 0 1 * * ?");
-		cleanupServer.start();
+		cleaner.setInterval(60 * 60);
+		cleaner.start();
 	}
 
 	private Imexports() {
