@@ -224,10 +224,11 @@ public final class Imexports {
 		}
 		long timestamp = System.currentTimeMillis();
 		final Result result = new Result();
-		final String[] titles = start > 0 ? Excels.getTitles(file, start - 1) : Strings.EMPTY_ARRAY;
+		Workbook workbook = Excels.getWorkbook(file);
 		final Workbook failed = new SXSSFWorkbook(100);
 		try {
-			int count = Excels.iteration(file, start, new Excels.Reader<T>() {
+			final String[] titles = start > 0 ? Excels.getTitles(workbook, start - 1) : Strings.EMPTY_ARRAY;
+			int count = Excels.iteration(workbook, start, new Excels.Reader<T>() {
 
 				@Override
 				public T read(Row row, int count) {
@@ -265,7 +266,11 @@ public final class Imexports {
 				result.setSize(Files.getUnitSize(attachment.length()));
 			}
 		} finally {
-			failed.close();
+			try {
+				workbook.close();
+			} finally {
+				failed.close();
+			}
 		}
 		result.setSpend(Dates.getUnitTime(System.currentTimeMillis() - timestamp));
 		return result;
