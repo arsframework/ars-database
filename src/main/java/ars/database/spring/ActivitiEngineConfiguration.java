@@ -35,8 +35,8 @@ import ars.database.activiti.ProcessConfiguration;
  * @author yongqiangwu
  * 
  */
-public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguration
-		implements ProcessConfiguration, ApplicationListener<ApplicationEvent> {
+public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguration implements ProcessConfiguration,
+		ApplicationListener<ApplicationEvent> {
 	private boolean deploied; // 流程是否已经发布
 	private Map<Class<?>, String> keys = new HashMap<Class<?>, String>(); // 模型/流程标识映射
 	private Map<Class<?>, String> processes = new HashMap<Class<?>, String>(); // 模型/流程文件映射
@@ -54,16 +54,16 @@ public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguratio
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		super.setApplicationContext(applicationContext);
-		List<ActivitiEventListener> listeners = new ArrayList<ActivitiEventListener>(
-				applicationContext.getBeansOfType(ActivitiEventListener.class).values());
+		List<ActivitiEventListener> listeners = new ArrayList<ActivitiEventListener>(applicationContext.getBeansOfType(
+				ActivitiEventListener.class).values());
 		this.setEventListeners(listeners);
 	}
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
 		if (event instanceof ContextRefreshedEvent && !this.deploied) {
-			this.deploy(this.processes);
 			Workflows.setEngine(((ApplicationContext) event.getSource()).getBean(ProcessEngine.class));
+			this.deploy(this.processes);
 			this.deploied = true;
 		}
 	}
@@ -81,7 +81,7 @@ public class ActivitiEngineConfiguration extends SpringProcessEngineConfiguratio
 	@Override
 	public List<ActivityNode> getNodes(Class<?> model) {
 		List<ActivityNode> nodes = this.nodes.get(this.getKey(model));
-		return nodes == null ? Collections.<ActivityNode>emptyList() : Collections.unmodifiableList(nodes);
+		return nodes == null ? Collections.<ActivityNode> emptyList() : Collections.unmodifiableList(nodes);
 	}
 
 	@Override

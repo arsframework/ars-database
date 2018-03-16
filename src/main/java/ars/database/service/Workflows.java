@@ -29,7 +29,7 @@ import ars.invoke.request.Requester;
  * 工作流处理工具类
  * 
  * @author yongqiangwu
- *
+ * 
  */
 public final class Workflows {
 	private static ProcessEngine engine;
@@ -60,11 +60,12 @@ public final class Workflows {
 		if (engine == null) {
 			throw new IllegalArgumentException("Illegal engine:" + engine);
 		}
-		if (Workflows.engine == null) {
-			synchronized (Workflows.class) {
-				if (Workflows.engine == null) {
-					Workflows.engine = engine;
-				}
+		if (Workflows.engine != null) {
+			throw new RuntimeException("Process engine has been initialize");
+		}
+		synchronized (Workflows.class) {
+			if (Workflows.engine == null) {
+				Workflows.engine = engine;
 			}
 		}
 	}
@@ -212,8 +213,7 @@ public final class Workflows {
 	 *            任务接收者标识
 	 * @return 任务对象
 	 */
-	public static <T extends Model> Task completeTask(Requester requester, Service<T> service, T entity,
-			String assignee) {
+	public static <T extends Model> Task completeTask(Requester requester, Service<T> service, T entity, String assignee) {
 		if (requester == null) {
 			throw new IllegalArgumentException("Illegal requester:" + requester);
 		}
@@ -469,13 +469,12 @@ public final class Workflows {
 		ProcessDiagramGenerator diagramGenerator = configuration.getProcessDiagramGenerator();
 		RepositoryService repositoryService = getEngine().getRepositoryService();
 		String identifier = ((ProcessConfiguration) configuration).getIdentifier(service.getModel());
-		List<String> activities = entity == null ? Arrays.asList(nodes.get(0).getCode())
-				: entity.getStatus().equals(nodes.get(nodes.size() - 1).getId())
-						? Arrays.asList(nodes.get(nodes.size() - 1).getCode())
-						: getEngine().getRuntimeService().getActiveActivityIds(entity.getProcess());
+		List<String> activities = entity == null ? Arrays.asList(nodes.get(0).getCode()) : entity.getStatus().equals(
+				nodes.get(nodes.size() - 1).getId()) ? Arrays.asList(nodes.get(nodes.size() - 1).getCode())
+				: getEngine().getRuntimeService().getActiveActivityIds(entity.getProcess());
 		return diagramGenerator.generateDiagram(repositoryService.getBpmnModel(identifier), "png", activities,
-				Collections.<String>emptyList(), configuration.getActivityFontName(), configuration.getLabelFontName(),
-				configuration.getClassLoader(), 1.0);
+				Collections.<String> emptyList(), configuration.getActivityFontName(),
+				configuration.getLabelFontName(), configuration.getClassLoader(), 1.0);
 	}
 
 }

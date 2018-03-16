@@ -32,8 +32,8 @@ import ars.invoke.convert.ThrowableResolver;
  * @author yongqiangwu
  * 
  */
-public class DatabaseConfiguration
-		implements ThrowableResolver, ServiceFactory, RepositoryFactory, ApplicationContextAware {
+public class DatabaseConfiguration implements ThrowableResolver, ServiceFactory, RepositoryFactory,
+		ApplicationContextAware {
 	/**
 	 * 数据关联异常编码
 	 */
@@ -128,8 +128,7 @@ public class DatabaseConfiguration
 		Service<T> service = (Service<T>) this.services.get(model);
 		if (service == null) {
 			synchronized (model) {
-				service = (Service<T>) this.services.get(model);
-				if (service == null) {
+				if ((service = (Service<T>) this.services.get(model)) == null) {
 					for (Entry<Class<?>, Service<?>> entry : this.services.entrySet()) {
 						if (entry.getKey().isAssignableFrom(model)) {
 							service = (Service<T>) entry.getValue();
@@ -159,8 +158,7 @@ public class DatabaseConfiguration
 		Repository<T> repository = (Repository<T>) this.repositories.get(model);
 		if (repository == null) {
 			synchronized (model) {
-				repository = (Repository<T>) this.repositories.get(model);
-				if (repository == null) {
+				if ((repository = (Repository<T>) this.repositories.get(model)) == null) {
 					for (Entry<Class<?>, Repository<?>> entry : this.repositories.entrySet()) {
 						if (entry.getKey().isAssignableFrom(model)) {
 							repository = (Repository<T>) entry.getValue();

@@ -63,7 +63,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 
 	public DetachedCriteriaQuery(SessionFactory sessionFactory, Class<T> model) {
 		if (sessionFactory == null) {
-			throw new IllegalArgumentException("Illegal sessionFactory:" + sessionFactory);
+			throw new IllegalArgumentException("Illegal sessionFactory:"
+					+ sessionFactory);
 		}
 		if (model == null) {
 			throw new IllegalArgumentException("Illegal model:" + model);
@@ -91,13 +92,15 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	protected Criteria getExecutableCriteria(Session session) {
 		if (this.subquery) {
 			String primary = Repositories.getPrimary(this.getModel());
-			this.criteria = DetachedCriteria.forClass(this.getModel())
-					.add(Subqueries.propertyIn(primary, this.criteria.setProjection(Property.forName(primary))));
+			this.criteria = DetachedCriteria.forClass(this.getModel()).add(
+					Subqueries.propertyIn(primary, this.criteria
+							.setProjection(Property.forName(primary))));
 			this.aliases.clear();
 		}
 		for (String property : this.orders) {
 			boolean asc = property.charAt(0) == '+';
-			String alias = this.getCriteriaAlias(property.substring(1), JoinType.LEFT_OUTER_JOIN);
+			String alias = this.getCriteriaAlias(property.substring(1),
+					JoinType.LEFT_OUTER_JOIN);
 			if (asc) {
 				this.criteria.addOrder(Order.asc(alias));
 			} else {
@@ -134,8 +137,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			} else {
 				alias = property.substring(index + 1) + this.aliases.size();
 				this.criteria.createAlias(
-						this._getCriteriaAlias(property.substring(0, index), joinType) + property.substring(index),
-						alias);
+						this._getCriteriaAlias(property.substring(0, index),
+								joinType) + property.substring(index), alias);
 			}
 			this.aliases.put(property, alias);
 		}
@@ -167,7 +170,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 		if (index <= 0) {
 			return property;
 		}
-		return this._getCriteriaAlias(property.substring(0, index), joinType) + property.substring(index);
+		return this._getCriteriaAlias(property.substring(0, index), joinType)
+				+ property.substring(index);
 	}
 
 	/**
@@ -207,32 +211,41 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	protected ConditionWrapper getConditionWrapper(String property, Object value) {
 		if (!this.subquery) {
 			int sign = property.indexOf('.');
-			this.subquery = Hibernates
-					.getPropertyType(this.sessionFactory, this.model, sign > 0 ? property.substring(0, sign) : property)
+			this.subquery = Hibernates.getPropertyType(this.sessionFactory,
+					this.model,
+					sign > 0 ? property.substring(0, sign) : property)
 					.isCollectionType();
 		}
-		Type type = Hibernates.getPropertyType(this.sessionFactory, this.model, property);
-		Class<?> meta = Hibernates.getPropertyTypeClass(this.sessionFactory, type);
+		Type type = Hibernates.getPropertyType(this.sessionFactory, this.model,
+				property);
+		Class<?> meta = Hibernates.getPropertyTypeClass(this.sessionFactory,
+				type);
 		if (type.isEntityType() || type.isCollectionType()) {
-			ClassMetadata metadata = Hibernates.getClassMetadata(this.sessionFactory, meta);
-			Class<?> primaryType = metadata.getIdentifierType().getReturnedClass();
-			property = new StringBuilder(property).append('.').append(metadata.getIdentifierPropertyName()).toString();
+			ClassMetadata metadata = Hibernates.getClassMetadata(
+					this.sessionFactory, meta);
+			Class<?> primaryType = metadata.getIdentifierType()
+					.getReturnedClass();
+			property = new StringBuilder(property).append('.')
+					.append(metadata.getIdentifierPropertyName()).toString();
 			if (value instanceof Collection || value instanceof Object[]) {
 				Collection<?> values = value instanceof Collection ? (Collection<?>) value
 						: Arrays.asList((Object[]) value);
 				List<Object> converts = new ArrayList<Object>(values.size());
 				for (Object v : values) {
 					if (meta.isAssignableFrom(v.getClass())) {
-						converts.add(Hibernates.getIdentifier(this.sessionFactory, v));
+						converts.add(Hibernates.getIdentifier(
+								this.sessionFactory, v));
 					} else {
 						converts.add(Beans.toObject(primaryType, v));
 					}
 				}
 				return new ConditionWrapper(property, converts);
 			} else if (value != null && meta.isAssignableFrom(value.getClass())) {
-				return new ConditionWrapper(property, Hibernates.getIdentifier(this.sessionFactory, value));
+				return new ConditionWrapper(property, Hibernates.getIdentifier(
+						this.sessionFactory, value));
 			}
-			return new ConditionWrapper(property, Beans.toObject(primaryType, value));
+			return new ConditionWrapper(property, Beans.toObject(primaryType,
+					value));
 		} else if (value instanceof Collection || value instanceof Object[]) {
 			Collection<?> values = value instanceof Collection ? (Collection<?>) value
 					: Arrays.asList((Object[]) value);
@@ -253,7 +266,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 * @return 条件匹配对象
 	 */
 	protected Criterion getEmptyCriterion(String property) {
-		if (Hibernates.getPropertyType(this.sessionFactory, this.model, property).isCollectionType()) {
+		if (Hibernates.getPropertyType(this.sessionFactory, this.model,
+				property).isCollectionType()) {
 			return Restrictions.isEmpty(this.getCriteriaAlias(property));
 		}
 		return Restrictions.isNull(this.getCriteriaAlias(property));
@@ -270,13 +284,17 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 		int i = 0;
 		Criterion[] criterions = new Criterion[properties.size()];
 		for (String property : properties) {
-			if (Hibernates.getPropertyType(this.sessionFactory, this.model, property).isCollectionType()) {
-				criterions[i++] = Restrictions.isEmpty(this.getCriteriaAlias(property));
+			if (Hibernates.getPropertyType(this.sessionFactory, this.model,
+					property).isCollectionType()) {
+				criterions[i++] = Restrictions.isEmpty(this
+						.getCriteriaAlias(property));
 			} else {
-				criterions[i++] = Restrictions.isNull(this.getCriteriaAlias(property));
+				criterions[i++] = Restrictions.isNull(this
+						.getCriteriaAlias(property));
 			}
 		}
-		return criterions.length == 1 ? criterions[0] : Restrictions.and(criterions);
+		return criterions.length == 1 ? criterions[0] : Restrictions
+				.and(criterions);
 	}
 
 	/**
@@ -287,7 +305,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 * @return 条件匹配对象
 	 */
 	protected Criterion getNonemptyCriterion(String property) {
-		if (Hibernates.getPropertyType(this.sessionFactory, this.model, property).isCollectionType()) {
+		if (Hibernates.getPropertyType(this.sessionFactory, this.model,
+				property).isCollectionType()) {
 			return Restrictions.isNotEmpty(this.getCriteriaAlias(property));
 		}
 		return Restrictions.isNotNull(this.getCriteriaAlias(property));
@@ -304,13 +323,17 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 		int i = 0;
 		Criterion[] criterions = new Criterion[properties.size()];
 		for (String property : properties) {
-			if (Hibernates.getPropertyType(this.sessionFactory, this.model, property).isCollectionType()) {
-				criterions[i++] = Restrictions.isNotEmpty(this.getCriteriaAlias(property));
+			if (Hibernates.getPropertyType(this.sessionFactory, this.model,
+					property).isCollectionType()) {
+				criterions[i++] = Restrictions.isNotEmpty(this
+						.getCriteriaAlias(property));
 			} else {
-				criterions[i++] = Restrictions.isNotNull(this.getCriteriaAlias(property));
+				criterions[i++] = Restrictions.isNotNull(this
+						.getCriteriaAlias(property));
 			}
 		}
-		return criterions.length == 1 ? criterions[0] : Restrictions.and(criterions);
+		return criterions.length == 1 ? criterions[0] : Restrictions
+				.and(criterions);
 	}
 
 	/**
@@ -324,7 +347,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getEqualCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.eq(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.eq(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -338,7 +362,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getNotEqualCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.ne(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.ne(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -352,7 +377,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getGreaterCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.gt(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.gt(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -366,7 +392,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getGreaterEqualCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.ge(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.ge(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -380,7 +407,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getLessCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.lt(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.lt(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -394,7 +422,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getLessEqualCriterion(String property, Object value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, value);
-		return Restrictions.le(this.getCriteriaAlias(condition.getProperty()), condition.getValue());
+		return Restrictions.le(this.getCriteriaAlias(condition.getProperty()),
+				condition.getValue());
 	}
 
 	/**
@@ -408,10 +437,14 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            最大值
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getBetweenCriterion(String property, Object low, Object high) {
-		ConditionWrapper condition = this.getConditionWrapper(property, Arrays.asList(low, high));
+	protected Criterion getBetweenCriterion(String property, Object low,
+			Object high) {
+		ConditionWrapper condition = this.getConditionWrapper(property,
+				Arrays.asList(low, high));
 		List<?> values = (List<?>) condition.getValue();
-		return Restrictions.between(this.getCriteriaAlias(condition.getProperty()), values.get(0), values.get(1));
+		return Restrictions.between(
+				this.getCriteriaAlias(condition.getProperty()), values.get(0),
+				values.get(1));
 	}
 
 	/**
@@ -425,7 +458,9 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getStartCriterion(String property, String value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
-		return Restrictions.ilike(this.getCriteriaAlias(condition.getProperty()), value, MatchMode.START);
+		return Restrictions.ilike(
+				this.getCriteriaAlias(condition.getProperty()), value,
+				MatchMode.START);
 	}
 
 	/**
@@ -437,7 +472,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getStartCriterion(String property, Collection<String> values) {
+	protected Criterion getStartCriterion(String property,
+			Collection<String> values) {
 		int i = 0;
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
 		String alias = this.getCriteriaAlias(condition.getProperty());
@@ -470,7 +506,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getNstartCriterion(String property, Collection<String> values) {
+	protected Criterion getNstartCriterion(String property,
+			Collection<String> values) {
 		return Restrictions.not(this.getStartCriterion(property, values));
 	}
 
@@ -485,7 +522,9 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getEndCriterion(String property, String value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
-		return Restrictions.ilike(this.getCriteriaAlias(condition.getProperty()), value, MatchMode.END);
+		return Restrictions.ilike(
+				this.getCriteriaAlias(condition.getProperty()), value,
+				MatchMode.END);
 	}
 
 	/**
@@ -497,7 +536,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getEndCriterion(String property, Collection<String> values) {
+	protected Criterion getEndCriterion(String property,
+			Collection<String> values) {
 		int i = 0;
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
 		String alias = this.getCriteriaAlias(condition.getProperty());
@@ -530,7 +570,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getNendCriterion(String property, Collection<String> values) {
+	protected Criterion getNendCriterion(String property,
+			Collection<String> values) {
 		return Restrictions.not(this.getEndCriterion(property, values));
 	}
 
@@ -545,7 +586,9 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 */
 	protected Criterion getLikeCriterion(String property, String value) {
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
-		return Restrictions.ilike(this.getCriteriaAlias(condition.getProperty()), value, MatchMode.ANYWHERE);
+		return Restrictions.ilike(
+				this.getCriteriaAlias(condition.getProperty()), value,
+				MatchMode.ANYWHERE);
 	}
 
 	/**
@@ -557,13 +600,15 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getLikeCriterion(String property, Collection<String> values) {
+	protected Criterion getLikeCriterion(String property,
+			Collection<String> values) {
 		int i = 0;
 		ConditionWrapper condition = this.getConditionWrapper(property, null);
 		String alias = this.getCriteriaAlias(condition.getProperty());
 		Criterion[] criterions = new Criterion[values.size()];
 		for (String value : values) {
-			criterions[i++] = Restrictions.ilike(alias, value, MatchMode.ANYWHERE);
+			criterions[i++] = Restrictions.ilike(alias, value,
+					MatchMode.ANYWHERE);
 		}
 		return values.size() == 1 ? criterions[0] : Restrictions.or(criterions);
 	}
@@ -590,7 +635,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性值集合
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getNlikeCriterion(String property, Collection<String> values) {
+	protected Criterion getNlikeCriterion(String property,
+			Collection<String> values) {
 		return Restrictions.not(this.getLikeCriterion(property, values));
 	}
 
@@ -652,7 +698,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 * @return 条件匹配对象
 	 */
 	protected Criterion getPropertyEqualCriterion(String property, String other) {
-		return Restrictions.eqProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+		return Restrictions.eqProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -664,8 +711,10 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性名
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getPropertyNotEqualCriterion(String property, String other) {
-		return Restrictions.neProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+	protected Criterion getPropertyNotEqualCriterion(String property,
+			String other) {
+		return Restrictions.neProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -678,7 +727,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 * @return 条件匹配对象
 	 */
 	protected Criterion getPropertyLessCriterion(String property, String other) {
-		return Restrictions.ltProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+		return Restrictions.ltProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -690,8 +740,10 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性名
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getPropertyLessEqualCriterion(String property, String other) {
-		return Restrictions.leProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+	protected Criterion getPropertyLessEqualCriterion(String property,
+			String other) {
+		return Restrictions.leProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -703,8 +755,10 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性名
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getPropertyGreaterCriterion(String property, String other) {
-		return Restrictions.gtProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+	protected Criterion getPropertyGreaterCriterion(String property,
+			String other) {
+		return Restrictions.gtProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -716,8 +770,10 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	 *            属性名
 	 * @return 条件匹配对象
 	 */
-	protected Criterion getPropertyGreaterEqualCriterion(String property, String other) {
-		return Restrictions.geProperty(this.getCriteriaAlias(property), this.getCriteriaAlias(other));
+	protected Criterion getPropertyGreaterEqualCriterion(String property,
+			String other) {
+		return Restrictions.geProperty(this.getCriteriaAlias(property),
+				this.getCriteriaAlias(other));
 	}
 
 	/**
@@ -748,42 +804,48 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (value instanceof Collection) {
 				return this.getStartCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getStartCriterion(key, Arrays.asList((String[]) value));
+				return this.getStartCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getStartCriterion(key, value.toString());
 		} else if (handle.equals(NOT_START)) {
 			if (value instanceof Collection) {
 				return this.getNstartCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getNstartCriterion(key, Arrays.asList((String[]) value));
+				return this.getNstartCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getNstartCriterion(key, value.toString());
 		} else if (handle.equals(END)) {
 			if (value instanceof Collection) {
 				return this.getEndCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getEndCriterion(key, Arrays.asList((String[]) value));
+				return this.getEndCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getEndCriterion(key, value.toString());
 		} else if (handle.equals(NOT_END)) {
 			if (value instanceof Collection) {
 				return this.getNendCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getNendCriterion(key, Arrays.asList((String[]) value));
+				return this.getNendCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getNendCriterion(key, value.toString());
 		} else if (handle.equals(LIKE)) {
 			if (value instanceof Collection) {
 				return this.getLikeCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getLikeCriterion(key, Arrays.asList((String[]) value));
+				return this.getLikeCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getLikeCriterion(key, value.toString());
 		} else if (handle.equals(NOT_LIKE)) {
 			if (value instanceof Collection) {
 				return this.getNlikeCriterion(key, (Collection<String>) value);
 			} else if (value instanceof String[]) {
-				return this.getNlikeCriterion(key, Arrays.asList((String[]) value));
+				return this.getNlikeCriterion(key,
+						Arrays.asList((String[]) value));
 			}
 			return this.getNlikeCriterion(key, value.toString());
 		} else if (handle.equals(EQ)) {
@@ -802,7 +864,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (value instanceof Collection) {
 				Collection<?> values = (Collection<?>) value;
 				if (values.size() == 1) {
-					return this.getEqualCriterion(key, values.iterator().next());
+					return this
+							.getEqualCriterion(key, values.iterator().next());
 				}
 				return this.getInCriterion(key, values);
 			} else if (value instanceof Object[]) {
@@ -817,7 +880,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (value instanceof Collection) {
 				Collection<?> values = (Collection<?>) value;
 				if (values.size() == 1) {
-					return this.getEqualCriterion(key, values.iterator().next());
+					return this
+							.getEqualCriterion(key, values.iterator().next());
 				}
 				return this.getOrCriterion(key, values);
 			} else if (value instanceof Object[]) {
@@ -832,7 +896,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (value instanceof Collection) {
 				Collection<?> values = (Collection<?>) value;
 				if (values.size() == 1) {
-					return this.getNotEqualCriterion(key, values.iterator().next());
+					return this.getNotEqualCriterion(key, values.iterator()
+							.next());
 				}
 				return this.getNotCriterion(key, values);
 			} else if (value instanceof Object[]) {
@@ -881,7 +946,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 					criterions.add(criterion);
 				}
 			}
-			return criterions.isEmpty() ? null : Restrictions.or(criterions.toArray(new Criterion[0]));
+			return criterions.isEmpty() ? null : Restrictions.or(criterions
+					.toArray(new Criterion[0]));
 		} else if (logic instanceof And) {
 			Logic[] logics = ((And) logic).getLogics();
 			if (logics.length == 1) {
@@ -894,10 +960,12 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 					criterions.add(criterion);
 				}
 			}
-			return criterions.isEmpty() ? null : Restrictions.and(criterions.toArray(new Criterion[0]));
+			return criterions.isEmpty() ? null : Restrictions.and(criterions
+					.toArray(new Criterion[0]));
 		} else if (logic instanceof Condition) {
 			Condition condition = (Condition) logic;
-			return this.getConditionCriterion(condition.getKey(), condition.getValue());
+			return this.getConditionCriterion(condition.getKey(),
+					condition.getValue());
 		}
 		throw new RuntimeException("Not support query logic:" + logic);
 	}
@@ -911,7 +979,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	protected void order(String property) {
 		if (property != null && !property.isEmpty()) {
 			boolean desc = property.charAt(0) == '-';
-			String name = desc || property.charAt(0) == '+' ? property.substring(1) : property;
+			String name = desc || property.charAt(0) == '+' ? property
+					.substring(1) : property;
 			if (desc) {
 				this.desc(name);
 			} else {
@@ -936,7 +1005,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (properties.length == 1) {
 				this.criteria.add(this.getEmptyCriterion(properties[0]));
 			} else {
-				this.criteria.add(this.getEmptyCriterion(Arrays.asList(properties)));
+				this.criteria.add(this.getEmptyCriterion(Arrays
+						.asList(properties)));
 			}
 		}
 		return this;
@@ -948,7 +1018,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (properties.length == 1) {
 				this.criteria.add(this.getNonemptyCriterion(properties[0]));
 			} else {
-				this.criteria.add(this.getNonemptyCriterion(Arrays.asList(properties)));
+				this.criteria.add(this.getNonemptyCriterion(Arrays
+						.asList(properties)));
 			}
 		}
 		return this;
@@ -1016,7 +1087,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getStartCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getStartCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getStartCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1028,7 +1100,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getNstartCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getNstartCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getNstartCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1040,7 +1113,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getEndCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getEndCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getEndCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1052,7 +1126,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getNendCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getNendCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getNendCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1064,7 +1139,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getLikeCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getLikeCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getLikeCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1076,7 +1152,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getNlikeCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getNlikeCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getNlikeCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1088,7 +1165,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getEqualCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getInCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getInCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1100,7 +1178,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			if (values.length == 1) {
 				this.criteria.add(this.getEqualCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getOrCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getOrCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1110,9 +1189,11 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> not(String property, Object[] values) {
 		if (property != null && values != null && values.length > 0) {
 			if (values.length == 1) {
-				this.criteria.add(this.getNotEqualCriterion(property, values[0]));
+				this.criteria.add(this
+						.getNotEqualCriterion(property, values[0]));
 			} else {
-				this.criteria.add(this.getNotCriterion(property, Arrays.asList(values)));
+				this.criteria.add(this.getNotCriterion(property,
+						Arrays.asList(values)));
 			}
 		}
 		return this;
@@ -1175,7 +1256,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			}
 		} else if (lproperty.equals(CONDITION)) {
 			if (!Beans.isEmpty(value)) {
-				Logic logic = value instanceof Logic ? (Logic) value : Conditions.parse(value.toString());
+				Logic logic = value instanceof Logic ? (Logic) value
+						: Conditions.parse(value.toString());
 				this.condition(logic);
 			}
 		} else {
@@ -1237,7 +1319,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public Query<T> neProperty(String property, String other) {
 		if (property != null && other != null) {
-			this.criteria.add(this.getPropertyNotEqualCriterion(property, other));
+			this.criteria.add(this
+					.getPropertyNotEqualCriterion(property, other));
 		}
 		return this;
 	}
@@ -1253,7 +1336,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public Query<T> leProperty(String property, String other) {
 		if (property != null && other != null) {
-			this.criteria.add(this.getPropertyLessEqualCriterion(property, other));
+			this.criteria.add(this.getPropertyLessEqualCriterion(property,
+					other));
 		}
 		return this;
 	}
@@ -1261,7 +1345,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public Query<T> gtProperty(String property, String other) {
 		if (property != null && other != null) {
-			this.criteria.add(this.getPropertyGreaterCriterion(property, other));
+			this.criteria
+					.add(this.getPropertyGreaterCriterion(property, other));
 		}
 		return this;
 	}
@@ -1269,7 +1354,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	@Override
 	public Query<T> geProperty(String property, String other) {
 		if (property != null && other != null) {
-			this.criteria.add(this.getPropertyGreaterEqualCriterion(property, other));
+			this.criteria.add(this.getPropertyGreaterEqualCriterion(property,
+					other));
 		}
 		return this;
 	}
@@ -1278,7 +1364,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> asc(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.orders.add(new StringBuilder("+").append(property).toString());
+				this.orders.add(new StringBuilder("+").append(property)
+						.toString());
 			}
 		}
 		return this;
@@ -1288,7 +1375,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> desc(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.orders.add(new StringBuilder("-").append(property).toString());
+				this.orders.add(new StringBuilder("-").append(property)
+						.toString());
 			}
 		}
 		return this;
@@ -1311,7 +1399,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> min(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.min(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.min(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1321,7 +1410,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> max(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.max(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.max(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1331,7 +1421,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> avg(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.avg(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.avg(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1341,7 +1432,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> sum(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.sum(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.sum(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1351,7 +1443,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> number(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.count(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.count(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1361,7 +1454,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> group(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.groupProperty(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.groupProperty(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1371,7 +1465,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 	public Query<T> property(String... properties) {
 		if (properties != null && properties.length > 0) {
 			for (String property : properties) {
-				this.projections.add(Projections.property(this.getCriteriaAlias(property)));
+				this.projections.add(Projections.property(this
+						.getCriteriaAlias(property)));
 			}
 		}
 		return this;
@@ -1385,7 +1480,9 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			} else {
 				Session session = this.sessionFactory.openSession();
 				try {
-					this.count = (int) ((Long) this.getExecutableCriteria(session).setProjection(Projections.rowCount())
+					this.count = (int) ((Long) this
+							.getExecutableCriteria(session)
+							.setProjection(Projections.rowCount())
 							.uniqueResult()).longValue();
 				} finally {
 					session.close();
@@ -1402,7 +1499,8 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 			this.loaded = true;
 			Session session = this.sessionFactory.openSession();
 			try {
-				this.object = (T) this.getExecutableCriteria(session).uniqueResult();
+				this.object = (T) this.getExecutableCriteria(session)
+						.uniqueResult();
 			} finally {
 				session.close();
 			}
@@ -1430,20 +1528,20 @@ public class DetachedCriteriaQuery<T> implements Query<T> {
 		if (!this.loaded) {
 			this.loaded = true;
 			if (this.projections.getLength() == 0) {
-				this.stats = new ArrayList<Object>(0);
-			} else {
-				Session session = this.sessionFactory.openSession();
-				try {
-					this.stats = this.getExecutableCriteria(session).setProjection(this.projections).list();
-					Iterator<?> iterator = this.stats.iterator();
-					while (iterator.hasNext()) {
-						if (iterator.next() == null) {
-							iterator.remove();
-						}
+				throw new RuntimeException("The projections can't be empty");
+			}
+			Session session = this.sessionFactory.openSession();
+			try {
+				this.stats = this.getExecutableCriteria(session)
+						.setProjection(this.projections).list();
+				Iterator<?> iterator = this.stats.iterator();
+				while (iterator.hasNext()) {
+					if (iterator.next() == null) {
+						iterator.remove();
 					}
-				} finally {
-					session.close();
 				}
+			} finally {
+				session.close();
 			}
 		}
 		return this.stats;
