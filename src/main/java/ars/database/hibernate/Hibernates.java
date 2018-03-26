@@ -98,9 +98,8 @@ public final class Hibernates {
 	 * @return 主键值
 	 */
 	public static Serializable getIdentifier(SessionFactory sessionFactory, Object object) {
-		return object == null ? null
-				: object instanceof Model ? ((Model) object).getId()
-						: (Serializable) Beans.getValue(object, getPrimary(sessionFactory, object.getClass()));
+		return object == null ? null : object instanceof Model ? ((Model) object).getId() : (Serializable) Beans
+				.getValue(object, getPrimary(sessionFactory, object.getClass()));
 	}
 
 	/**
@@ -146,9 +145,8 @@ public final class Hibernates {
 	 * @return 类型对象
 	 */
 	public static Class<?> getPropertyTypeClass(SessionFactory sessionFactory, Type type) {
-		return type.isCollectionType()
-				? ((CollectionType) type).getElementType((SessionFactoryImplementor) sessionFactory).getReturnedClass()
-				: type.getReturnedClass();
+		return type.isCollectionType() ? ((CollectionType) type).getElementType(
+				(SessionFactoryImplementor) sessionFactory).getReturnedClass() : type.getReturnedClass();
 	}
 
 	/**
@@ -273,9 +271,8 @@ public final class Hibernates {
 			metadata.setPropertyValue(object, property, value);
 		} else if (type.isCollectionType()) { // 多对多
 			Object[] values = Beans.toArray(Object.class, value);
-			Collection<Object> objects = Set.class.isAssignableFrom(type.getReturnedClass())
-					? new HashSet<Object>(values.length)
-					: new ArrayList<Object>(values.length);
+			Collection<Object> objects = Set.class.isAssignableFrom(type.getReturnedClass()) ? new HashSet<Object>(
+					values.length) : new ArrayList<Object>(values.length);
 			if (values.length > 0) {
 				Session session = null;
 				Class<?> foreignPrimaryClass = getPrimaryClass(sessionFactory, meta);
@@ -383,8 +380,8 @@ public final class Hibernates {
 			if (!repositoryInterface.exists()) {
 				BufferedWriter writer = null;
 				try {
-					writer = new BufferedWriter(
-							new OutputStreamWriter(new FileOutputStream(repositoryInterface), "utf-8"));
+					writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(repositoryInterface),
+							"utf-8"));
 					writer.write("package " + basePack + ".repository;");
 					writer.newLine();
 					writer.newLine();
@@ -433,8 +430,8 @@ public final class Hibernates {
 			if (!repositoryImplement.exists()) {
 				BufferedWriter writer = null;
 				try {
-					writer = new BufferedWriter(
-							new OutputStreamWriter(new FileOutputStream(repositoryImplement), "utf-8"));
+					writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(repositoryImplement),
+							"utf-8"));
 					writer.write("package " + basePack + ".repository.impl;");
 					writer.newLine();
 					writer.newLine();
@@ -485,6 +482,29 @@ public final class Hibernates {
 	}
 
 	/**
+	 * 将驼峰式字符串以“_”号进行拆分
+	 * 
+	 * @param source
+	 *            被拆分源字符串
+	 * @return 拆分后字符串
+	 */
+	private static String getNameString(String source) {
+		StringBuilder chars = new StringBuilder();
+		for (int i = 0; i < source.length(); i++) {
+			char c = source.charAt(i);
+			if (Character.isUpperCase(c)) {
+				if (i > 0) {
+					chars.append('_');
+				}
+				chars.append(c);
+			} else {
+				chars.append(Character.toUpperCase(c));
+			}
+		}
+		return chars.toString();
+	}
+
+	/**
 	 * 创建实体映射配置文件
 	 * 
 	 * @param models
@@ -522,7 +542,7 @@ public final class Hibernates {
 					writer.write("<hibernate-mapping>");
 					writer.newLine();
 					writer.write("\t<class name=\"" + model.getName() + "\" table=\""
-							+ Strings.splitHumpString(model.getSimpleName(), true) + "\">");
+							+ getNameString(model.getSimpleName()) + "\">");
 					writer.newLine();
 					writer.write("\t\t<id name=\"id\" column=\"ID_\" type=\"int\">");
 					writer.newLine();
@@ -540,7 +560,7 @@ public final class Hibernates {
 								if (type == Object.class || name.equals("id")) {
 									continue;
 								}
-								String column = Strings.splitHumpString(name, true);
+								String column = getNameString(name);
 								if (type == byte.class || type == Byte.class) {
 									writer.newLine();
 									writer.write("\t\t<property name=\"" + name + "\" column=\"" + column
@@ -592,7 +612,10 @@ public final class Hibernates {
 								} else if (type == String.class) {
 									writer.newLine();
 									if (TreeModel.class.isAssignableFrom(model) && name.equals("key")) {
-										writer.write("\t\t<property name=\"" + name + "\" column=\"" + column
+										writer.write("\t\t<property name=\""
+												+ name
+												+ "\" column=\""
+												+ column
 												+ "_\" type=\"string\" length=\"50\" not-null=\"true\" unique=\"true\"/>");
 									} else {
 										writer.write("\t\t<property name=\"" + name + "\" column=\"" + column
@@ -632,8 +655,7 @@ public final class Hibernates {
 										writer.write("\t\t<list name=\"" + name + "\">");
 									}
 									writer.newLine();
-									writer.write("\t\t\t<key column=\""
-											+ Strings.splitHumpString(model.getSimpleName(), true)
+									writer.write("\t\t\t<key column=\"" + getNameString(model.getSimpleName())
 											+ "_ID_\" not-null=\"true\"/>");
 									if (List.class.isAssignableFrom(type)) {
 										writer.newLine();
@@ -644,8 +666,8 @@ public final class Hibernates {
 										writer.write("\t\t\t<element type=\"" + foreign.getName() + "\" column=\""
 												+ name.toUpperCase() + "_\"/>");
 									} else {
-										writer.write("\t\t\t<many-to-many class=\"" + foreign.getName() + "\" column=\""
-												+ Strings.splitHumpString(foreign.getSimpleName(), true) + "_ID_\"/>");
+										writer.write("\t\t\t<many-to-many class=\"" + foreign.getName()
+												+ "\" column=\"" + getNameString(foreign.getSimpleName()) + "_ID_\"/>");
 									}
 									writer.newLine();
 									if (Set.class.isAssignableFrom(type)) {
@@ -664,8 +686,8 @@ public final class Hibernates {
 					}
 					if (TreeModel.class.isAssignableFrom(model)) {
 						writer.newLine();
-						writer.write("\t\t<many-to-one name=\"parent\" column=\"PARENT_ID_\" class=\"" + model.getName()
-								+ "\"/>");
+						writer.write("\t\t<many-to-one name=\"parent\" column=\"PARENT_ID_\" class=\""
+								+ model.getName() + "\"/>");
 						writer.newLine();
 						writer.write("\t\t<list name=\"children\" inverse=\"true\">");
 						writer.newLine();

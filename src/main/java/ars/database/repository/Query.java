@@ -3,7 +3,7 @@ package ars.database.repository;
 import java.util.Map;
 import java.util.List;
 
-import ars.util.Conditions.Logic;
+import ars.util.Conditions.Condition;
 
 /**
  * 数据查询集合
@@ -415,11 +415,11 @@ public interface Query<T> extends Iterable<T> {
 	/**
 	 * 自定义查询条件
 	 * 
-	 * @param logic
+	 * @param condition
 	 *            条件逻辑
 	 * @return 数据集合
 	 */
-	public Query<T> condition(Logic logic);
+	public Query<T> condition(Condition condition);
 
 	/**
 	 * 自定义查询条件

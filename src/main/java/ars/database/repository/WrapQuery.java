@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 
-import ars.util.Conditions.Logic;
+import ars.util.Conditions.Condition;
 import ars.database.repository.Query;
 
 /**
@@ -136,8 +136,8 @@ public class WrapQuery<T> implements Query<T> {
 	}
 
 	@Override
-	public Query<T> condition(Logic logic) {
-		return this.query.condition(logic);
+	public Query<T> condition(Condition condition) {
+		return this.query.condition(condition);
 	}
 
 	@Override

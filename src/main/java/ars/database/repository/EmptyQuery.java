@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Collections;
 
-import ars.util.Conditions.Logic;
+import ars.util.Conditions.Condition;
 import ars.database.repository.Query;
 
 /**
@@ -153,7 +153,7 @@ public final class EmptyQuery<T> implements Query<T> {
 	}
 
 	@Override
-	public Query<T> condition(Logic logic) {
+	public Query<T> condition(Condition condition) {
 		return this;
 	}
 

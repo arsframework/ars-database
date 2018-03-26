@@ -55,7 +55,7 @@ import ars.util.Trees;
 import ars.util.Strings;
 import ars.util.ObjectAdapter;
 import ars.util.Conditions.Or;
-import ars.util.Conditions.Condition;
+import ars.util.Conditions.Match;
 import ars.database.model.TreeModel;
 import ars.database.hibernate.Hibernates;
 import ars.database.hibernate.HibernateSimpleRepository;
@@ -75,8 +75,8 @@ import ars.invoke.request.ParameterInvalidException;
  * @author yongqiangwu
  * 
  */
-public class HibernateDatabaseConfiguration extends DatabaseConfiguration
-		implements ObjectAdapter, ServiceListener<ServiceEvent> {
+public class HibernateDatabaseConfiguration extends DatabaseConfiguration implements ObjectAdapter,
+		ServiceListener<ServiceEvent> {
 	private static Map<Class<?>, List<Property>> VALIDATE_MODEL_PROPERTY_MAPPING = new HashMap<Class<?>, List<Property>>(); // 数据模型/属性映射
 	private static Map<Class<?>, Map<Class<?>, List<Property>>> VALIDATE_MODEL_RELATE_MAPPING = new HashMap<Class<?>, Map<Class<?>, List<Property>>>(); // 数据模型关联属性映射
 
@@ -114,7 +114,7 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 			throw new RuntimeException("Unknown model:" + model.getName());
 		}
 
-		List<Condition> uniques = new LinkedList<Condition>();
+		List<Match> uniques = new LinkedList<Match>();
 		for (Property property : properties) {
 			String name = property.getName();
 			Object value = Beans.getValue(entity, name);
@@ -124,7 +124,7 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 				if (!column.isNullable() && Beans.isEmpty(value)) {
 					throw new ParameterInvalidException(name, "required");
 				} else if (column.isUnique() && !Beans.isEmpty(value)) {
-					uniques.add(new Condition(name, value));
+					uniques.add(new Match(name, value));
 				}
 			}
 			if (entity instanceof TreeModel && name.equals("parent") && Trees.isLoop((TreeModel<?>) entity)) {
@@ -134,11 +134,11 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 		if (!uniques.isEmpty()) {
 			Object id = Beans.getValue(entity, repository.getPrimary());
 			Object exist = repository.query().ne(repository.getPrimary(), id)
-					.condition(new Or(uniques.toArray(new Condition[0]))).single();
+					.condition(new Or(uniques.toArray(new Match[0]))).single();
 			if (exist != null) {
-				for (Condition condition : uniques) {
-					if (Beans.isEqual(Beans.getValue(exist, condition.getKey()), condition.getValue())) {
-						throw new ParameterInvalidException(condition.getKey(), "exist");
+				for (Match match : uniques) {
+					if (Beans.isEqual(Beans.getValue(exist, match.getKey()), match.getValue())) {
+						throw new ParameterInvalidException(match.getKey(), "exist");
 					}
 				}
 			}
@@ -222,8 +222,8 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 	 *            Spring上下文对象
 	 */
 	protected void bindValidateProperty(ApplicationContext applicationContext) {
-		Collection<LocalSessionFactoryBean> sessionFactoryBeans = applicationContext
-				.getBeansOfType(LocalSessionFactoryBean.class).values();
+		Collection<LocalSessionFactoryBean> sessionFactoryBeans = applicationContext.getBeansOfType(
+				LocalSessionFactoryBean.class).values();
 		for (LocalSessionFactoryBean bean : sessionFactoryBeans) {
 			SessionFactory sessionFactory = bean.getObject();
 			Configuration configuration = bean.getConfiguration();
@@ -243,8 +243,9 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 				while (propertyIterator.hasNext()) {
 					Property property = (Property) propertyIterator.next();
 					String name = property.getName();
-					if (TreeModel.class.isAssignableFrom(mappedClass) && (name.equals("key") || name.equals("level")
-							|| name.equals("leaf") || name.equals("parent") || name.equals("children"))) {
+					if (TreeModel.class.isAssignableFrom(mappedClass)
+							&& (name.equals("key") || name.equals("level") || name.equals("leaf")
+									|| name.equals("parent") || name.equals("children"))) {
 						continue;
 					}
 					mappedProperties.add(property);
@@ -324,8 +325,8 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 	protected void registerEventListener(ApplicationContext applicationContext) {
 		Collection<SessionFactory> sessionFactories = applicationContext.getBeansOfType(SessionFactory.class).values();
 		for (SessionFactory sessionFactory : sessionFactories) {
-			EventListenerRegistry registry = ((SessionFactoryImpl) sessionFactory).getServiceRegistry()
-					.getService(EventListenerRegistry.class);
+			EventListenerRegistry registry = ((SessionFactoryImpl) sessionFactory).getServiceRegistry().getService(
+					EventListenerRegistry.class);
 
 			Map<String, LoadEventListener> loadEventListeners = applicationContext
 					.getBeansOfType(LoadEventListener.class);
@@ -475,8 +476,8 @@ public class HibernateDatabaseConfiguration extends DatabaseConfiguration
 			Map<String, InitializeCollectionEventListener> initializeCollectionEventListeners = applicationContext
 					.getBeansOfType(InitializeCollectionEventListener.class);
 			if (!initializeCollectionEventListeners.isEmpty()) {
-				registry.appendListeners(EventType.INIT_COLLECTION,
-						initializeCollectionEventListeners.values().toArray(new InitializeCollectionEventListener[0]));
+				registry.appendListeners(EventType.INIT_COLLECTION, initializeCollectionEventListeners.values()
+						.toArray(new InitializeCollectionEventListener[0]));
 			}
 		}
 	}
