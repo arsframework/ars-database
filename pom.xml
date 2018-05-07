@@ -4,7 +4,7 @@
 
 	<groupId>com.arsframework</groupId>
 	<artifactId>ars-database</artifactId>
-	<version>1.2.4</version>
+	<version>2.0.0</version>
 	<packaging>jar</packaging>
 
 	<name>ars-database</name>
@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>com.arsframework</groupId>
 			<artifactId>ars-core</artifactId>
-			<version>1.7.5</version>
+			<version>2.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 
