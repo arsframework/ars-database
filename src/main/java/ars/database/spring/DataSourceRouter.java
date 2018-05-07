@@ -14,40 +14,39 @@ import ars.invoke.event.InvokeCompleteEvent;
 
 /**
  * 数据源路由器实现
- * 
- * @author yongqiangwu
- * 
+ *
+ * @author wuyongqiang
  */
 public class DataSourceRouter extends AbstractRoutingDataSource implements InvokeListener<InvokeEvent> {
-	private Map<String, String> routes = new HashMap<String, String>();
-	private final ThreadLocal<String> dataSource = new ThreadLocal<String>();
+    private Map<String, String> routes = new HashMap<String, String>();
+    private final ThreadLocal<String> dataSource = new ThreadLocal<String>();
 
-	public Map<String, String> getRoutes() {
-		return routes;
-	}
+    public Map<String, String> getRoutes() {
+        return routes;
+    }
 
-	public void setRoutes(Map<String, String> routes) {
-		this.routes = routes;
-	}
+    public void setRoutes(Map<String, String> routes) {
+        this.routes = routes;
+    }
 
-	@Override
-	protected Object determineCurrentLookupKey() {
-		return this.dataSource.get();
-	}
+    @Override
+    protected Object determineCurrentLookupKey() {
+        return this.dataSource.get();
+    }
 
-	@Override
-	public void onInvokeEvent(InvokeEvent event) {
-		if (event instanceof InvokeBeforeEvent) {
-			String uri = event.getSource().getUri();
-			for (Entry<String, String> entry : this.routes.entrySet()) {
-				if (Strings.matches(uri, entry.getKey())) {
-					this.dataSource.set(entry.getValue());
-					break;
-				}
-			}
-		} else if (event instanceof InvokeCompleteEvent) {
-			this.dataSource.remove();
-		}
-	}
+    @Override
+    public void onInvokeEvent(InvokeEvent event) {
+        if (event instanceof InvokeBeforeEvent) {
+            String uri = event.getSource().getUri();
+            for (Entry<String, String> entry : this.routes.entrySet()) {
+                if (Strings.matches(uri, entry.getKey())) {
+                    this.dataSource.set(entry.getValue());
+                    break;
+                }
+            }
+        } else if (event instanceof InvokeCompleteEvent) {
+            this.dataSource.remove();
+        }
+    }
 
 }
